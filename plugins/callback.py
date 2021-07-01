@@ -1,5 +1,6 @@
 from message_schema import Updater
-from plugins.statemachine import LocalCacheForCallbackFunc
+# from plugins.statemachine import LocalCacheForCallbackFunc
+from plugins.cache import LocalCacheForCallbackFunc
 from plugins.config import cfg
 from plugins.helper import send_message
 from plugins.helper import remove_html_in_dict
@@ -12,12 +13,13 @@ from plugins.helper import remove_html_in_dict
 # search = InversIndexSearch(url=url_fasttext, token=token_fastext)
 
 # инициализируем класс с кэшем только для коллбэк ф-ций
-cache = LocalCacheForCallbackFunc()
+# cache = LocalCacheForCallbackFunc()
 
 
-async def hello_message(m: Updater):
+async def hello_message(m: Updater, cache: LocalCacheForCallbackFunc):
     """
     Приветственное сообщение с просьбой указать навык
+    :param cache:
     :param m: Входящее сообщение
     :return: ключ колбэк ф-ции, которую нужно вызвать
     """
@@ -26,14 +28,7 @@ async def hello_message(m: Updater):
     else:
         await cache.clean(m.callback_query.message.chat.id)
 
-    # процедура для обновления кэша
-    # key = mc.get("key_for_update_{}".format(str(unique_quid_app)))
-    # if key is None:
-    #     search.cache_index = pcl.get_pickle_file(index_filename)
-    #     vacs.vacs = pcl.get_pickle_file(vacs_filename)
-    #     mc.set("key_for_update_{}".format(str(unique_quid_app)), "True", time=time_for_update_index)
-
-    text = "💥 Приветствую, я найду для тебя работу. Введите ключевые слова❗"
+    text = "💥 Приветствую, я найду для тебя работу. Введите свой ключевой навык❗"
     await send_message(cfg.app.hosts.tlg.host,
                        m.message.chat.id,
                        text,
@@ -41,9 +36,9 @@ async def hello_message(m: Updater):
     return 1
 
 
-async def analyze_text_and_give_vacancy(m: Updater):
+async def analyze_text_and_give_vacancy(m: Updater, cache: LocalCacheForCallbackFunc):
     """
-
+    :param cache:
     :param m: Входящее сообщение
     :return: ключ колбэк ф-ции, которую нужно вызвать
     """
@@ -55,7 +50,9 @@ async def analyze_text_and_give_vacancy(m: Updater):
             # result: list = search.search(m.message.text)
             result: list = [123, 456, 789]
             step = 0
-            await cache.caching(m.message.chat.id, step=step, arr=result)
+            await cache.caching(m.message.chat.id,
+                                step=step,
+                                arr=result)
         vac_id = await cache.give_cache(m.message.chat.id)
         get_vac_by_id: dict = {
             123: {
@@ -78,7 +75,6 @@ async def analyze_text_and_give_vacancy(m: Updater):
             }
         }
         vacancy_info = get_vac_by_id.get(vac_id, False)
-        # vacancy_info: dict = vacs.get_vac_by_id(vac_id)
         if vacancy_info:
             title: str = "💥 Название позиции: " + vacancy_info['content']['title'] + '\n'
             text: str = title + "💥 Описание: " + vacancy_info['content']['header'] + '\n' + \

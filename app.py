@@ -10,7 +10,6 @@ import aiohttp_cors
 
 from handlers import HANDLERS
 from payloads import AsyncGenJSONListPayload, JsonPayload
-from plugins.cache import mc
 
 api_address = "0.0.0.0"
 api_port = 8081
@@ -46,9 +45,6 @@ def create_app() -> Application:
         route = app.router.add_route('*', handler.URL_PATH, handler)
 
         app['aiohttp_cors'].add(route)
-
-    # регестрируем менеджер кэша
-    app['cache'] = mc
 
     setup_aiohttp_apispec(app=app, title="I SEE YOU API", swagger_path='/')
 
