@@ -11,6 +11,8 @@ import aiohttp_cors
 from handlers import HANDLERS
 from payloads import AsyncGenJSONListPayload, JsonPayload
 
+from plugins.pg.connector import setup_pg
+
 api_address = "0.0.0.0"
 api_port = 8081
 
@@ -37,6 +39,8 @@ def create_app() -> Application:
             allow_headers="*",
         )
     })
+    # регистрируем коннектор к базе
+    # app.cleanup_ctx.append(setup_pg)
 
     # Регистрация обработчика
     for handler in HANDLERS:
@@ -47,7 +51,6 @@ def create_app() -> Application:
         app['aiohttp_cors'].add(route)
 
     setup_aiohttp_apispec(app=app, title="I SEE YOU API", swagger_path='/')
-
     # Автоматическая сериализация в json данных в HTTP ответах
     PAYLOAD_REGISTRY.register(AsyncGenJSONListPayload,
                               (AsyncGeneratorType, AsyncIterable))

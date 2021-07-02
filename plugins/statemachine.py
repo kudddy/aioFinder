@@ -1,14 +1,12 @@
-from typing import List
-
 from message_schema import Updater
 
 from plugins.config import cfg
-# from plugins.cache import mc
 from plugins.cache import AioMemCache, LocalCacheForCallbackFunc
 
 
 class Stages:
-    def __init__(self, stages,
+    def __init__(self,
+                 stages: dict,
                  cache: AioMemCache):
         self.stages = stages
         self.mc = cache
