@@ -30,24 +30,6 @@ class CUBE(UserDefinedType):
         return "CUBE"
 
 
-comments = Table(
-    'comments',
-    metadata,
-    Column('id', Integer, primary_key=True),
-    Column('file', String),
-    Column('comment', String),
-    Column('date', Date)
-)
-
-feedback = Table(
-    'feedback',
-    metadata,
-    Column('id', Integer, primary_key=True),
-    Column('comment', String),
-    Column('date', Date)
-
-)
-
 vacancy_content = Table(
     'vacancy_content',
     metadata,

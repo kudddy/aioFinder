@@ -1,32 +1,26 @@
+from sqlalchemy import select, func, desc
+
 from message_schema import Updater
-# from plugins.statemachine import LocalCacheForCallbackFunc
-from plugins.cache import LocalCacheForCallbackFunc
+from plugins.systems import Systems
 from plugins.config import cfg
 from plugins.helper import send_message
 from plugins.helper import remove_html_in_dict
-
-# from plugins.cache import mc
-
-# # инициализируем класс с вакансиями
-# vacs = GetVac(vacs_filename=vacs_filename)
-# # инициализируем поисковой движок
-# search = InversIndexSearch(url=url_fasttext, token=token_fastext)
-
-# инициализируем класс с кэшем только для коллбэк ф-ций
-# cache = LocalCacheForCallbackFunc()
+from plugins.pg.tables import index_map, cache_index, vacancy_content
 
 
-async def hello_message(m: Updater, cache: LocalCacheForCallbackFunc):
+# TODO сделать прокси класс с коннекторами в базе и кэшу
+async def hello_message(m: Updater,
+                        systems: Systems):
     """
     Приветственное сообщение с просьбой указать навык
-    :param cache:
+    :param systems: Объект с вспомогательными классами(для доступа к базам и локальному кэшу)
     :param m: Входящее сообщение
     :return: ключ колбэк ф-ции, которую нужно вызвать
     """
     if m.message:
-        await cache.clean(m.message.chat.id)
+        await systems.local_cache.clean(m.message.chat.id)
     else:
-        await cache.clean(m.callback_query.message.chat.id)
+        await systems.local_cache.clean(m.callback_query.message.chat.id)
 
     text = "💥 Приветствую, я найду для тебя работу. Введите свой ключевой навык❗"
     await send_message(cfg.app.hosts.tlg.host,
@@ -36,49 +30,53 @@ async def hello_message(m: Updater, cache: LocalCacheForCallbackFunc):
     return 1
 
 
-async def analyze_text_and_give_vacancy(m: Updater, cache: LocalCacheForCallbackFunc):
+async def analyze_text_and_give_vacancy(m: Updater,
+                                        systems: Systems):
     """
-    :param cache:
+    :param systems: Объект с вспомогательными классами(для доступа к базам и локальному кэшу)
     :param m: Входящее сообщение
     :return: ключ колбэк ф-ции, которую нужно вызвать
     """
     if m.message.text != 'Нет':
-        if await cache.check(m.message.chat.id):
-            await cache.next_step(m.message.chat.id)
+        if await systems.local_cache.check(m.message.chat.id):
+            # TODO подумать, нужно ли так рано
+            await systems.local_cache.next_step(m.message.chat.id)
         else:
             # возвращат id вакансии
-            # result: list = search.search(m.message.text)
-            result: list = [123, 456, 789]
+            # запрос к базе данный
+            times = select([index_map.c.original_index]).\
+                where(index_map.c.extended_index == m.message.text).\
+                alias("times")
+
+            j = times.join(cache_index, times.c.original_index == cache_index.c.original_index)
+
+            search_result = select([cache_index.c.vacancy_id, func.count(cache_index.c.vacancy_id).label('counter')]). \
+                select_from(j). \
+                group_by(cache_index.c.vacancy_id).\
+                order_by(desc('counter')).\
+                alias("search_result")
+
+            j = search_result.join(vacancy_content, search_result.c.vacancy_id == vacancy_content.c.id)
+
+            query = select([search_result, vacancy_content]).select_from(j).order_by(
+                desc(search_result.c.counter)).limit(5)
+
+            ready_content = []
+            columns = ["id", "title", "footer", "header",
+                       "requirements", "duties", "conditions",
+                       "date", "locality", "region", "company"]
+            for row in await systems.pg.fetch(query):
+                reconstruction: dict = {v: str(row[v]) for v in columns}
+                ready_content.append(reconstruction)
             step = 0
-            await cache.caching(m.message.chat.id,
-                                step=step,
-                                arr=result)
-        vac_id = await cache.give_cache(m.message.chat.id)
-        get_vac_by_id: dict = {
-            123: {
-                'content': {
-                    'title': 'Пиздюк иваныч',
-                    'header': 'В задачи вакансии входит ебать мозги'
-                }
-            },
-            456: {
-                'content': {
-                    'title': 'Пиздюк иваныч',
-                    'header': 'В задачи вакансии входит ебать мозги'
-                }
-            },
-            789: {
-                'content': {
-                    'title': 'Пиздюк иваныч',
-                    'header': 'В задачи вакансии входит ебать мозги'
-                }
-            }
-        }
-        vacancy_info = get_vac_by_id.get(vac_id, False)
-        if vacancy_info:
-            title: str = "💥 Название позиции: " + vacancy_info['content']['title'] + '\n'
-            text: str = title + "💥 Описание: " + vacancy_info['content']['header'] + '\n' + \
-                        cfg.app.hosts.sbervacanсy.host.format(str(vac_id))
+            await systems.local_cache.caching(m.message.chat.id,
+                                              step=step,
+                                              arr=ready_content)
+        most_sim_vacancy_content = await systems.local_cache.give_cache(m.message.chat.id)
+        if most_sim_vacancy_content:
+            title: str = "💥 Название позиции: " + most_sim_vacancy_content['title'] + '\n'
+            text: str = title + "💥 Описание: " + most_sim_vacancy_content['header'] + '\n' + \
+                        cfg.app.hosts.sbervacanсy.host.format(str(most_sim_vacancy_content['id']))
             text: str = text + '\n' "Показать еще❓"
             await send_message(cfg.app.hosts.tlg.host, m.message.chat.id,
                                remove_html_in_dict(text)[:4095],

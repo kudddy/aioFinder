@@ -5,20 +5,11 @@ from aiohttp_apispec import docs
 
 from .base import BaseView
 from message_schema import Updater
-from plugins.statemachine import Stages
-from plugins.callback import hello_message, analyze_text_and_give_vacancy, goodbye_message
-from plugins.cache import AioMemCache
 
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
 log.setLevel(logging.DEBUG)
-
-mc = AioMemCache()
-
-state = {0: hello_message, 1: analyze_text_and_give_vacancy, 2: goodbye_message}
-
-stage = Stages(state, mc)
 
 
 class GetMessageFromTlg(BaseView):
@@ -37,6 +28,6 @@ class GetMessageFromTlg(BaseView):
 
         message = Updater(**data)
 
-        await stage.next(message)
+        await self.stage.next(message)
 
         return Response(status=200, text="ok")
