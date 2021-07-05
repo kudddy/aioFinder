@@ -145,7 +145,7 @@ class TestInternalSystem(asynctest.TestCase):
 
         message = Updater(**data)
 
-        sleep(cfg.app.constants.timeout_for_chat_test + 2)
+        sleep(cfg.app.constants.timeout_for_chat + 2)
 
         state_number = await stage.next(message)
 
@@ -153,6 +153,7 @@ class TestInternalSystem(asynctest.TestCase):
 
         memcached.flush_all()
 
+        sleep(cfg.app.constants.timeout_for_chat + 2)
 
     async def test_positive_node(self):
         # Инициализируем соедением с mc
