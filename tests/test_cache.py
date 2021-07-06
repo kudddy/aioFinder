@@ -1,11 +1,17 @@
 import asynctest
-from plugins.cache import AioMemCache
+from aiomcache import Client
+from plugins.mc.init import AioMemCache
 from plugins.config import cfg
 
 
 class AioMemTest(asynctest.TestCase):
     async def test_get_and_set_from_cache(self):
-        mc = AioMemCache()
+        memcached = Client(
+            cfg.app.hosts.mc.host,
+            cfg.app.hosts.mc.port,
+            pool_size=2)
+
+        mc = AioMemCache(memcached)
 
         value: dict = {"1": 2}
 

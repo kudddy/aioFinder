@@ -13,9 +13,5 @@ class BaseView(View, CorsViewMixin):
         return self.request.app['pg']
 
     @property
-    def cache(self):
-        return self.request.app['cache']
-
-    @property
-    def encoders(self):
-        return self.request.app['encoders']
+    def stage(self):
+        return self.request.app['stage']
