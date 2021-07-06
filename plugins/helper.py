@@ -11,36 +11,64 @@ from aiohttp_requests import requests
 async def send_message(url: str,
                        chat_id: int,
                        text: str,
+                       parse_mode: str = None,
                        buttons: list or None = None,
+                       inline_keyboard: list or None = None,
                        one_time_keyboard: bool = True,
                        resize_keyboard: bool = True,
                        remove_keyboard: bool = False):
     payload = {
         "chat_id": chat_id,
         "text": text,
-    }
-    if buttons is None:
-        if remove_keyboard:
-            payload.update({"reply_markup": {
-                "remove_keyboard": remove_keyboard
-            }})
-            payload["reply_markup"].update({'remove_keyboard': remove_keyboard})
-    elif isinstance(buttons, list) is True:
-        reply_markup = [[{"text": text}] for text in buttons]
-
-        payload = {
-            "chat_id": chat_id,
-            "text": text,
-            "reply_markup": {"keyboard": reply_markup,
-                             "resize_keyboard": resize_keyboard,
-                             "one_time_keyboard": one_time_keyboard}
+        "reply_markup": {
+            "remove_keyboard": remove_keyboard
         }
-        if remove_keyboard:
-            payload["reply_markup"].update({'remove_keyboard': remove_keyboard})
+    }
+
+    if parse_mode:
+        payload.update({"parse_mode": parse_mode})
+
+    if buttons:
+        # TODO hardcode
+        keyboards = [[{"text": text}] for text in buttons]
+        payload["reply_markup"].update({
+            "keyboard": keyboards,
+            "resize_keyboard": resize_keyboard,
+            "one_time_keyboard": one_time_keyboard
+        })
+
+    if inline_keyboard:
+        payload["reply_markup"].update({"inline_keyboard": inline_keyboard})
 
     headers = {
         "Content-Type": "application/json",
     }
+
+    await requests.get(url, headers=headers, data=payload, ssl=False)
+
+
+async def edit_message_text(url: str,
+                            text: str,
+                            chat_id: int or str = None,
+                            message_id: int = None,
+                            inline_message_id: str = None,
+                            parse_mode: str = None,
+                            entities: str = None,
+                            disable_web_page_preview: bool = None,
+                            reply_markup=None
+                            ):
+    payload = {
+        "text": text
+    }
+    if chat_id:
+        payload.update({"chat_id": chat_id})
+    if message_id:
+        payload.update({"message_id": message_id})
+
+    headers = {
+        "Content-Type": "application/json",
+    }
+
     payload = json.dumps(payload)
 
     await requests.get(url, headers=headers, data=payload, ssl=False)

@@ -7,6 +7,16 @@
 ```
 docker run --name my-memcache -p 11211:11211 -d memcached
 ```
+Дополнительные параметры для кэша:
+```
+-m 64    # Maximum memory to use, in megabytes. 64MB is default.
+-p 11211    # Default port, but being explicit is nice.
+-I 5m # Maximum memory to use with one key
+```
+Для приложения требуется запустить кэш с расширенной памятью
+```
+docker run --name my-memcache -I 5m -p 11211:11211 -d memcached
+```
 
 ## gcloud
 Аутентификация в кластере gcloud

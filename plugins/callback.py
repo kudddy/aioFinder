@@ -1,4 +1,5 @@
 from sqlalchemy import select, func, desc
+import html2text
 
 from message_schema import Updater
 from plugins.systems import Systems
@@ -44,6 +45,7 @@ async def analyze_text_and_give_vacancy(m: Updater,
         else:
             # возвращат id вакансии
             # запрос к базе данный
+            # TODO нет нормализации
             times = select([index_map.c.original_index]).\
                 where(index_map.c.extended_index == m.message.text).\
                 alias("times")
@@ -59,7 +61,7 @@ async def analyze_text_and_give_vacancy(m: Updater,
             j = search_result.join(vacancy_content, search_result.c.vacancy_id == vacancy_content.c.id)
 
             query = select([search_result, vacancy_content]).select_from(j).order_by(
-                desc(search_result.c.counter)).limit(5)
+                desc(search_result.c.counter)).limit(cfg.app.constants.number_of_recs)
 
             ready_content = []
             columns = ["id", "title", "footer", "header",
@@ -75,11 +77,20 @@ async def analyze_text_and_give_vacancy(m: Updater,
         most_sim_vacancy_content = await systems.local_cache.give_cache(m.message.chat.id)
         if most_sim_vacancy_content:
             title: str = "💥 Название позиции: " + most_sim_vacancy_content['title'] + '\n'
-            text: str = title + "💥 Описание: " + most_sim_vacancy_content['header'] + '\n' + \
-                        cfg.app.hosts.sbervacanсy.host.format(str(most_sim_vacancy_content['id']))
-            text: str = text + '\n' "Показать еще❓"
-            await send_message(cfg.app.hosts.tlg.host, m.message.chat.id,
-                               remove_html_in_dict(text)[:4095],
+            # text: str = title + "💥 Описание: " + most_sim_vacancy_content['header'] + '\n' + \
+            #             cfg.app.hosts.sbervacanсy.host.format(str(most_sim_vacancy_content['id']))
+            # text: str = text + '\n' "Показать еще❓"
+            # print(most_sim_vacancy_content['header'].replace("<p>", ""))
+            # TODO обратить внимание на форматирование
+
+            # генерация inline клавиатуры
+            # inline_buttons = ['Да', 'Нет']
+            # todo сделать датакласс
+            # inline_keyboard = [[{"text": text, "callback_data": "A1"} for text in inline_buttons]]
+            # todo преобразовывать из html в text на уровне загрузки данных в базу
+            await send_message(cfg.app.hosts.tlg.host,
+                               m.message.chat.id,
+                               html2text.html2text(most_sim_vacancy_content['header']),
                                buttons=['Да', 'Нет'],
                                one_time_keyboard=False)
             return 1
