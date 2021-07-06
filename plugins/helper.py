@@ -47,16 +47,16 @@ async def send_message(url: str,
     await requests.get(url, headers=headers, data=payload, ssl=False)
 
 
-async def edit_message_text(url: str,
-                            text: str,
-                            chat_id: int or str = None,
-                            message_id: int = None,
-                            inline_message_id: str = None,
-                            parse_mode: str = None,
-                            entities: str = None,
-                            disable_web_page_preview: bool = None,
-                            reply_markup=None
-                            ):
+async def edit_message(url: str,
+                       text: str,
+                       chat_id: int or str = None,
+                       message_id: int = None,
+                       inline_keyboard: list or None = None,
+                       inline_message_id: str = None,
+                       parse_mode: str = None,
+                       entities: str = None,
+                       disable_web_page_preview: bool = None,
+                       ):
     payload = {
         "text": text
     }
@@ -69,7 +69,11 @@ async def edit_message_text(url: str,
         "Content-Type": "application/json",
     }
 
-    payload = json.dumps(payload)
+    if inline_keyboard:
+        payload.update(
+            {"reply_markup": {
+                "inline_keyboard": inline_keyboard}
+            })
 
     await requests.get(url, headers=headers, data=payload, ssl=False)
 
