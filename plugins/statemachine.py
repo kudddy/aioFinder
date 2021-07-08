@@ -63,7 +63,8 @@ async def init_stages(app: Application):
     # инициализация локального кэша для реализации возможности кэшировать запросы к базе данных
     local_cache = LocalCacheForCallbackFunc(global_cache)
     # Инициализация прокси объекта с объектами, которые нужны для сценария
-    systems = Systems(global_cache, app['pg'], local_cache)
+    systems = Systems(global_cache,
+                      app['pg'],
+                      local_cache)
 
-    app['stage'] = Stages(state,
-                          systems)
+    app['stage'] = Stages(state, systems)

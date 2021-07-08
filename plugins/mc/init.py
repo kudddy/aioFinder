@@ -64,6 +64,8 @@ async def setup_mc(app: Application):
     log.info("Success connect to %r - %r",
              cfg.app.hosts.mc.host,
              cfg.app.hosts.mc.port)
+    # TODO в конфигах пока жестко защитый ip
+    # TODO сделать конфигмапу
     try:
         yield
     finally:
@@ -71,36 +73,3 @@ async def setup_mc(app: Application):
         await app['mc'].close()
         log.info('Disconnected from mc')
 
-# class AioMemCache:
-#     def __init__(self, mc):
-#         try:
-#             self.cache = aiomcache.Client(
-#                 cfg.app.hosts.mc.host,
-#                 cfg.app.hosts.mc.port,
-#                 pool_size=2)
-#             log.debug("Success connect to %r - %r",
-#                       cfg.app.hosts.mc.host,
-#                       cfg.app.hosts.mc.port)
-#         except Exception as e:
-#             log.debug("Error to connect memcached with address %r - %r, error - %r",
-#                       cfg.app.hosts.mc.host,
-#                       cfg.app.hosts.mc.port,
-#                       e)
-
-# @encode_input_value
-# async def get(self, key: object):
-#     value = await self.cache.get(Coder.encode(key))
-#     if value:
-#         value = Coder.decode(value)
-#     return value
-#
-# # @encode_input_value
-# async def set(self, key: object, value: object, timeout: int = 0):
-#     await self.cache.set(Coder.encode(key), Coder.encode(value), exptime=timeout)
-#
-# # @encode_input_value
-# async def delete(self, key: object):
-#     await self.cache.delete(Coder.encode(key))
-
-# mc = AioMemCache(host=cfg.app.hosts.mc.host,
-#                  port=cfg.app.hosts.mc.port)
