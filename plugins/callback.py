@@ -7,7 +7,6 @@ from plugins.helper import send_message, edit_message
 from plugins.pg.query import generate_search_query
 
 
-# TODO сделать прокси класс с коннекторами в базе и кэшу
 async def hello_message(m: Updater,
                         systems: Systems):
     """
@@ -44,7 +43,7 @@ async def analyze_text_and_give_vacancy(m: Updater,
     elif m.callback_query:
         chat_id = m.callback_query.message.chat.id
         message_id = m.callback_query.message.message_id
-        text = m.callback_query.message.text
+        text = m.callback_query.data
     else:
         chat_id = None
         message_id = None
@@ -61,10 +60,7 @@ async def analyze_text_and_give_vacancy(m: Updater,
 
                 # TODO обратить внимание на форматирование
 
-                # генерация inline клавиатуры
-                inline_buttons = ['Да', 'Нет']
                 # todo сделать датакласс
-                # inline_keyboard = [[{"text": text, "callback_data": "A1"} for text in inline_buttons]]
                 inline_keyboard = [
                     [
                         {
@@ -79,11 +75,6 @@ async def analyze_text_and_give_vacancy(m: Updater,
                     ]
                 ]
                 # todo преобразовывать из html в text на уровне загрузки данных в базу
-                await send_message(cfg.app.hosts.tlg.send_message,
-                                   chat_id,
-                                   html2text.html2text(most_sim_vacancy_content['header']),
-                                   inline_keyboard=inline_keyboard)
-
                 await edit_message(url=cfg.app.hosts.tlg.edit_message,
                                    text=html2text.html2text(most_sim_vacancy_content['header']),
                                    message_id=message_id,
@@ -126,8 +117,21 @@ async def analyze_text_and_give_vacancy(m: Updater,
                                           arr=ready_content)
         # первый раз отсылаем сообщение
         if len(ready_content) > 0:
-            inline_buttons = ['Да', 'Нет']
-            inline_keyboard = [[{"text": text, "callback_data": "A1"} for text in inline_buttons]]
+            # inline_buttons = ['Да', 'Нет']
+            # inline_keyboard = [[{"text": text, "callback_data": "A1"} for text in inline_buttons]]
+            inline_keyboard = [
+                [
+                    {
+                        "text": "Да",
+                        "callback_data": "Да"
+                    },
+                    {
+                        "text": "Нет",
+                        "callback_data": "Нет"
+
+                    }
+                ]
+            ]
             await send_message(cfg.app.hosts.tlg.send_message,
                                chat_id,
                                html2text.html2text(ready_content[step]['header']),

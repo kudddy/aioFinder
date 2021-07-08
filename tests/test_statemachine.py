@@ -180,8 +180,6 @@ class TestInternalSystem(asynctest.TestCase):
 
         local_cache = LocalCacheForCallbackFunc(global_cache)
 
-        global_cache.cache.flush_all()
-
         state = {0: hello_message, 1: analyze_text_and_give_vacancy, 2: goodbye_message}
 
         system = Systems(mc=global_cache,
@@ -189,8 +187,6 @@ class TestInternalSystem(asynctest.TestCase):
                          local_cache=local_cache)
 
         stage = Stages(state, system)
-
-        memcached.flush_all()
 
         log.debug("checking a positive thread when the user follows all the recommendations")
         log.debug("phrase check - hello")
@@ -213,7 +209,7 @@ class TestInternalSystem(asynctest.TestCase):
                     "type": "private"
                 },
                 "date": 1589404439,
-                "text": "hello"
+                "text": "Привет"
             }
         }
 
@@ -275,7 +271,7 @@ class TestInternalSystem(asynctest.TestCase):
                     "type": "private"
                 },
                 "date": 1589404439,
-                "text": "да"
+                "text": "Да"
             }
         }
 

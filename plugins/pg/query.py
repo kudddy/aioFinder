@@ -18,7 +18,7 @@ def generate_search_query(text: str):
         alias("search_result")
 
     j = search_result.join(vacancy_content, search_result.c.vacancy_id == vacancy_content.c.id)
-
+    # TODO выгружаю слишком много данных, не помещается в кэш
     query = select([search_result, vacancy_content]).select_from(j).order_by(
         desc(search_result.c.counter)).limit(cfg.app.constants.number_of_recs)
 

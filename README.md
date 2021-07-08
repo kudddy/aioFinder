@@ -1,9 +1,17 @@
 ## Поиска вакансий
 Описание: Поиск вакансий по ключевому слову в режиме вопрос - ответ. Для поиска используется обратный индекс, 
 для увеличения полноты индекса - w2v обученный на hr данных. Движок автоматически обновляет вакансии и индексы.
-
+## Сборка
+Cборка образа
+```
+docker build -t docker.io/kudddy/ifinder .
+```
+Публикация образа
+```
+docker push docker.io/kudddy/ifinder:latest
+```
 ## Кэш
-Для запуска движка требуется memcahed, локальная запускается следующей командой:
+Для запуска движка требуется memcached, локальная запускается следующей командой:
 ```
 docker run --name my-memcache -p 11211:11211 -d memcached
 ```
@@ -22,6 +30,18 @@ docker run --name my-memcache -I 5m -p 11211:11211 -d memcached
 Аутентификация в кластере gcloud
 ```
 gcloud container clusters get-credentials cluster-1 --zone europe-north1-a --project disco-sector-317101
+```
+
+подключение к контейнеру в gcloud
+```
+kubectl exec -it <POD NAME> -c <CONTAINER NAME> -- bash
+```
+в моем случае
+```
+kubectl exec -it backend-deployment-6856bfb657-mrpnp -c iseebackend -- bash
+```
+```
+kubectl expose pod memcached-deployment-d86cb8f88-bnpsr --name some-memcached-11211 --type LoadBalancer --port 11211 --protocol TCP
 ```
 
 ## postgres
