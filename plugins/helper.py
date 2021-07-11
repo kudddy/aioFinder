@@ -41,10 +41,10 @@ async def send_message(url: str,
         payload["reply_markup"].update({"inline_keyboard": inline_keyboard})
 
     headers = {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
     }
 
-    await requests.get(url, headers=headers, data=payload, ssl=False)
+    await requests.get(url, headers=headers, data=json.dumps(payload), ssl=False)
 
 
 async def edit_message(url: str,
@@ -75,7 +75,7 @@ async def edit_message(url: str,
                 "inline_keyboard": inline_keyboard}
             })
 
-    await requests.get(url, headers=headers, data=payload, ssl=False)
+    await requests.get(url, headers=headers, data=json.dumps(payload), ssl=False)
 
 
 # class GetVac:

@@ -1,14 +1,13 @@
-from asyncpgsa import PG
-from aiomcache import Client
+from aiohttp.web_app import Application
 
 from message_schema import Updater
 
 from plugins.config import cfg
 from plugins.systems import Systems
 from plugins.systems import LocalCacheForCallbackFunc
+from plugins.tools.tokenizer import QueryBuilder
 from plugins.mc.init import AioMemCache
 from plugins.callback import hello_message, analyze_text_and_give_vacancy, goodbye_message
-from aiohttp.web_app import Application
 
 
 class Stages:
@@ -26,15 +25,10 @@ class Stages:
                    m: Updater) -> int:
         """
         Ф-ция занимается маршрутизацией и вызовом коллбэк функций
-        :param pg: коннекток к базе данных
-        :param mc: конектор к кэшу
         :param m: сообщение от Telegram
         :return: None
         """
-        if m.message:
-            chat_id = m.message.chat.id
-        else:
-            chat_id = m.callback_query.message.chat.id
+        chat_id = m.get_chat_id()
         key = await self.systems.global_cache.get(chat_id)
         if key:
             step = int(key['step'])
@@ -42,7 +36,6 @@ class Stages:
             step = 0
 
         step = await self.stages[step].__call__(m, self.systems)
-
         key = await self.systems.global_cache.get(chat_id)
 
         if key:
@@ -61,10 +54,15 @@ async def init_stages(app: Application):
     # коннектор к базе данных
     global_cache = AioMemCache(app['mc'])
     # инициализация локального кэша для реализации возможности кэшировать запросы к базе данных
+    # TODO переименовать, т.к. по факту служит кэшем только для одного запроса
     local_cache = LocalCacheForCallbackFunc(global_cache)
+    # инициализируем токенизер
+    tokenizer = QueryBuilder(out_clean='str', out_token='list')
     # Инициализация прокси объекта с объектами, которые нужны для сценария
-    systems = Systems(global_cache,
-                      app['pg'],
-                      local_cache)
+    # TODO нейминг выглядит хуева
+    systems = Systems(mc=global_cache,
+                      pg=app['pg'],
+                      local_cache=local_cache,
+                      tokenizer=tokenizer)
 
     app['stage'] = Stages(state, systems)
