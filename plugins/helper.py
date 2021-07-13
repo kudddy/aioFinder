@@ -19,7 +19,7 @@ async def send_message(url: str,
                        remove_keyboard: bool = False):
     payload = {
         "chat_id": chat_id,
-        "text": text,
+        "text": text[:4095],
         "reply_markup": {
             "remove_keyboard": remove_keyboard
         }
@@ -44,7 +44,11 @@ async def send_message(url: str,
         "Content-Type": "application/json"
     }
 
-    await requests.get(url, headers=headers, data=json.dumps(payload), ssl=False)
+    res = await requests.get(url, headers=headers, data=json.dumps(payload), ssl=False)
+
+    res = await res.json()
+
+    print(res)
 
 
 async def edit_message(url: str,
@@ -58,12 +62,14 @@ async def edit_message(url: str,
                        disable_web_page_preview: bool = None,
                        ):
     payload = {
-        "text": text
+        "text": text[:4095]
     }
     if chat_id:
         payload.update({"chat_id": chat_id})
     if message_id:
         payload.update({"message_id": message_id})
+    if parse_mode:
+        payload.update({"parse_mode": parse_mode})
 
     headers = {
         "Content-Type": "application/json",
@@ -75,8 +81,38 @@ async def edit_message(url: str,
                 "inline_keyboard": inline_keyboard}
             })
 
-    await requests.get(url, headers=headers, data=json.dumps(payload), ssl=False)
+    res = await requests.get(url, headers=headers, data=json.dumps(payload), ssl=False)
 
+    res = await res.json()
+
+    print(res)
+
+
+def escape_markdown(text: str, version: int = 1, entity_type: str = None) -> str:
+    """
+    Helper function to escape telegram markup symbols.
+    Args:
+        text (:obj:`str`): The text.
+        version (:obj:`int` | :obj:`str`): Use to specify the version of telegrams Markdown.
+            Either ``1`` or ``2``. Defaults to ``1``.
+        entity_type (:obj:`str`, optional): For the entity types ``PRE``, ``CODE`` and the link
+            part of ``TEXT_LINKS``, only certain characters need to be escaped in ``MarkdownV2``.
+            See the official API documentation for details. Only valid in combination with
+            ``version=2``, will be ignored else.
+    """
+    if int(version) == 1:
+        escape_chars = r'_*`['
+    elif int(version) == 2:
+        if entity_type in ['pre', 'code']:
+            escape_chars = r'\`'
+        elif entity_type == 'text_link':
+            escape_chars = r'\)'
+        else:
+            escape_chars = r'_*[]()~`>#+-=|{}.!'
+    else:
+        raise ValueError('Markdown version must be either 1 or 2!')
+
+    return re.sub(f'([{re.escape(escape_chars)}])', r'\\\1', text)
 
 # class GetVac:
 #     def __init__(self, vacs_filename):

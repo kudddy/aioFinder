@@ -16,13 +16,87 @@ async def hello_message(m: Updater,
     :return: ключ колбэк ф-ции, которую нужно вызвать
     """
 
-    await systems.local_cache.clean(m.get_chat_id())
+    chat_id = m.get_chat_id()
+
+    await systems.local_cache.clean(chat_id)
 
     text = "💥 Приветствую, я найду для тебя работу. Введите свой ключевой навык❗"
+    inline_keyboard = [
+        [
+            {
+                "text": "JavaScript",
+                "callback_data": "JavaScript"
+            },
+            {
+                "text": "Python",
+                "callback_data": "Python"
+
+            },
+        ],
+        [
+            {
+                "text": "Java, Scala",
+                "callback_data": "Java, Scala"
+            },
+            {
+                "text": "C/C++, Assembler",
+                "callback_data": "C/C++, Assembler"
+            }
+        ],
+        [
+            {
+                "text": "PHP",
+                "callback_data": "PHP"
+            },
+            {
+                "text": ".NET",
+                "callback_data": ".NET"
+            },
+            {
+                "text": "QA",
+                "callback_data": "QA"
+            }
+        ],
+        [
+            {
+                "text": "DevOps",
+                "callback_data": "DevOps"
+            },
+            {
+                "text": "IOS",
+                "callback_data": "IOS"
+            },
+            {
+                "text": "Golang",
+                "callback_data": "Golang"
+            }
+        ],
+        [
+            {
+                "text": "Data Science",
+                "callback_data": "DS, Data Science"
+            },
+            {
+                "text": "Security",
+                "callback_data": "Security, безопасность"
+            },
+        ],
+        [
+            {
+                "text": "Analyst",
+                "callback_data": "Analyst"
+            },
+            {
+                "text": "Manager",
+                "callback_data": "Manager"
+            }
+        ]
+
+    ]
     await send_message(cfg.app.hosts.tlg.send_message,
-                       m.message.chat.id,
+                       chat_id,
                        text,
-                       remove_keyboard=True)
+                       inline_keyboard=inline_keyboard)
     return 1
 
 
@@ -33,8 +107,6 @@ async def analyze_text_and_give_vacancy(m: Updater,
     :param m: Входящее сообщение
     :return: ключ колбэк ф-ции, которую нужно вызвать
     """
-    # отлавливаем chat_id
-
     chat_id = m.get_chat_id()
     message_id = m.get_message_id()
     text = m.get_text()
@@ -43,7 +115,7 @@ async def analyze_text_and_give_vacancy(m: Updater,
     if await systems.local_cache.check(chat_id):
 
         if text == "Да":
-            # TODO переименовать чтобы бло более наглядно что мы вытаскваем инфо по вакансии
+            # TODO переименовать чтобы было более наглядно что мы вытаскваем инфо по вакансии
             await systems.local_cache.next_step(chat_id)
 
             most_sim_vacancy_content = await systems.local_cache.give_cache(chat_id)
@@ -52,6 +124,9 @@ async def analyze_text_and_give_vacancy(m: Updater,
                 # TODO обратить внимание на форматирование
 
                 # todo сделать датакласс
+
+                url: str = cfg.app.hosts.sbervacanсy.host.format(most_sim_vacancy_content["id"])
+
                 inline_keyboard = [
                     [
                         {
@@ -62,12 +137,25 @@ async def analyze_text_and_give_vacancy(m: Updater,
                             "text": "Нет",
                             "callback_data": "Нет"
 
+                        },
+                    ],
+                    [
+                        {
+                            "text": "Описание и отклик",
+                            "url": url,
+                            "callback_data": ""
                         }
                     ]
                 ]
                 # todo преобразовывать из html в text на уровне загрузки данных в базу
+
+                title: str = "💥 Название позиции: " + most_sim_vacancy_content['title'] + '\n'
+                text: str = title + "💥 Описание: " + html2text.html2text(most_sim_vacancy_content['header'])[
+                                                      :4000] + '\n'
+                text: str = text + '\n' "Показать еще❓"
+
                 await edit_message(url=cfg.app.hosts.tlg.edit_message,
-                                   text=html2text.html2text(most_sim_vacancy_content['header']),
+                                   text=text,
                                    message_id=message_id,
                                    chat_id=chat_id,
                                    inline_keyboard=inline_keyboard)
@@ -93,17 +181,16 @@ async def analyze_text_and_give_vacancy(m: Updater,
             return 0
 
     else:
-        # возвращат id вакансии
-        # запрос к базе данный
-        # TODO нет нормализации
 
         list_of_tokens: list = systems.tokenizer.clean_query(text)
         query = generate_search_query(list_of_tokens)
 
         ready_content = []
-        columns = ["id", "title", "footer", "header",
-                   "requirements", "duties", "conditions",
-                   "date", "locality", "region", "company"]
+        # columns = ["id", "title", "footer", "header",
+        #            "requirements", "duties", "conditions",
+        #            "date", "locality", "region", "company"]
+        # TODO грязный баг фикс, который умешает размер объекта в кэше
+        columns = ["id", "title", "header"]
         for row in await systems.pg.fetch(query):
             reconstruction: dict = {v: str(row[v]) for v in columns}
             ready_content.append(reconstruction)
@@ -113,8 +200,9 @@ async def analyze_text_and_give_vacancy(m: Updater,
                                           arr=ready_content)
         # первый раз отсылаем сообщение
         if len(ready_content) > 0:
-            # inline_buttons = ['Да', 'Нет']
-            # inline_keyboard = [[{"text": text, "callback_data": "A1"} for text in inline_buttons]]
+
+            url: str = cfg.app.hosts.sbervacanсy.host.format(ready_content[step]["id"])
+
             inline_keyboard = [
                 [
                     {
@@ -126,11 +214,23 @@ async def analyze_text_and_give_vacancy(m: Updater,
                         "callback_data": "Нет"
 
                     }
+                ],
+                [
+                    {
+                        "text": "Описание и отклик",
+                        "url": url,
+                        "callback_data": ""
+                    }
                 ]
             ]
+            # генерируем текст сообщения
+            title: str = "💥 Название позиции: " + ready_content[step]['title'] + '\n'
+            text: str = title + "💥 Описание: " + html2text.html2text(ready_content[step]['header'])[:4000] + '\n'
+            text: str = text + '\n' "Показать еще❓"
+
             await send_message(cfg.app.hosts.tlg.send_message,
                                chat_id,
-                               html2text.html2text(ready_content[step]['header']),
+                               text,
                                inline_keyboard=inline_keyboard)
             return 1
         else:

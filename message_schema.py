@@ -41,7 +41,8 @@ class Chat(BaseModel):
 
 class InlineKeyboard(BaseModel):
     text: str
-    callback_data: str
+    callback_data: str or None = None
+    url: str or None = None
 
 
 class ReplyMarkup(BaseModel):
@@ -72,10 +73,10 @@ class Updater(BaseModel):
     callback_query: CallbackQuery = None
 
     def its_callback(self):
-        if self.message:
-            return False
-        else:
+        if self.callback_query:
             return True
+        else:
+            return False
 
     def get_message_id(self):
 
@@ -101,6 +102,7 @@ class Updater(BaseModel):
             text = self.message.text
 
         return text
+
 
 data_for_callback = {
     "update_id": 632560344,
@@ -146,8 +148,74 @@ data_for_callback = {
     }
 }
 
-dt = Updater(**data_for_callback)
+data = {
+    "update_id": 531126412,
+    "callback_query": {
+        "id": "349750407619198040",
+        "from": {
+            "id": 81432612,
+            "is_bot": False,
+            "first_name": "Kirill",
+            "username": "kkkkk_kkk_kkkkk",
+            "language_code": "ru"
+        },
+        "message": {
+            "message_id": 3018,
+            "from": {
+                "id": 888186754,
+                "is_bot": True,
+                "first_name": "Night2DayChecker",
+                "username": "big5_test_bot"
+            },
+            "chat": {
+                "id": 81432612,
+                "first_name": "Kirill",
+                "username": "kkkkk_kkk_kkkkk",
+                "type": "private"
+            },
+            "date": 1626105119,
+            "text": "kkk",
+            "entities": [
+                {
+                    "offset": 35,
+                    "length": 7,
+                    "type": "url"
+                },
+                {
+                    "offset": 82,
+                    "length": 7,
+                    "type": "url"
+                },
+                {
+                    "offset": 91,
+                    "length": 15,
+                    "type": "url"
+                }
+            ],
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "Да",
+                            "callback_data": "Да"
+                        },
+                        {
+                            "text": "Нет",
+                            "callback_data": "Нет"
+                        }
+                    ],
+                    [
+                        {
+                            "text": "Описание и отклик",
+                            "url": "https://my.sbertalents.ru/#/job-requisition/2110375"
+                        }
+                    ]
+                ]
+            }
+        },
+        "chat_instance": "-5135792011174378514",
+        "data": "Да"
+    }
+}
 
-print("----------")
-print(dt.get_chat_id())
-print("----------")
+m = Updater(**data)

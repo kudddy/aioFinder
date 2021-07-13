@@ -7,7 +7,7 @@ def load_config(filename: str):
     return config
 
 
-config = load_config('config/lcl.yaml')
+config = load_config('config/prod.yaml')
 
 
 class ConfigObj(object):
