@@ -16,3 +16,5 @@ PyYAML~=5.4.1
 aiounittest~=1.4.0
 asynctest~=0.13.0
 html2text
+pymorphy2
+nltk

@@ -5,6 +5,7 @@ from aiomcache import Client
 from time import sleep
 
 from plugins.config import cfg
+from plugins.tools.tokenizer import QueryBuilder
 from plugins.statemachine import Stages
 from plugins.systems import Systems, LocalCacheForCallbackFunc
 from plugins.callback import hello_message, analyze_text_and_give_vacancy, goodbye_message
@@ -48,9 +49,12 @@ class TestInternalSystem(asynctest.TestCase):
 
         state = {0: hello_message, 1: analyze_text_and_give_vacancy, 2: goodbye_message}
 
+        tokenizer = QueryBuilder(out_clean='str', out_token='list')
+
         system = Systems(mc=global_cache,
                          pg=pg,
-                         local_cache=local_cache)
+                         local_cache=local_cache,
+                         tokenizer=tokenizer)
 
         stage = Stages(state, system)
 
@@ -182,9 +186,12 @@ class TestInternalSystem(asynctest.TestCase):
 
         state = {0: hello_message, 1: analyze_text_and_give_vacancy, 2: goodbye_message}
 
+        tokenizer = QueryBuilder(out_clean='str', out_token='list')
+
         system = Systems(mc=global_cache,
                          pg=pg,
-                         local_cache=local_cache)
+                         local_cache=local_cache,
+                         tokenizer=tokenizer)
 
         stage = Stages(state, system)
 

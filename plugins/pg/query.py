@@ -1,12 +1,14 @@
-from sqlalchemy import select, func, desc
+from sqlalchemy import select, func, desc, or_
 
 from plugins.pg.tables import index_map, cache_index, vacancy_content
 from plugins.config import cfg
 
 
-def generate_search_query(text: str):
+def generate_search_query(text: list):
+
+    tokens = [index_map.c.extended_index == x for x in text]
     times = select([index_map.c.original_index]). \
-        where(index_map.c.extended_index == text). \
+        where(or_(*tokens)). \
         alias("times")
 
     j = times.join(cache_index, times.c.original_index == cache_index.c.original_index)

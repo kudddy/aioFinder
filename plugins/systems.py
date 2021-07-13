@@ -1,6 +1,7 @@
 from typing import List
 from asyncpgsa import PG
 from plugins.mc.init import AioMemCache
+from plugins.tools.tokenizer import QueryBuilder
 
 
 class LocalCacheForCallbackFunc:
@@ -65,7 +66,9 @@ class Systems:
 
     def __init__(self, mc: AioMemCache,
                  pg: PG,
-                 local_cache: LocalCacheForCallbackFunc):
+                 local_cache: LocalCacheForCallbackFunc,
+                 tokenizer: QueryBuilder):
         self.global_cache = mc
         self.pg = pg
         self.local_cache = local_cache
+        self.tokenizer = tokenizer
