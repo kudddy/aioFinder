@@ -94,6 +94,18 @@ create table user_enter
 );
 ```
 
+```
+likes_info
+create table likes_info
+(
+	user_id int,
+	chat_id int,
+	date date,
+	"like" int,
+    "vacancy_id": int
+);
+```
+
 
 ## Типовые операции с таблицей
 переименование таблицы
@@ -107,4 +119,20 @@ where extended_index = 'django') as times
 join cache_index on times.original_index = cache_index.original_index
 group by cache_index.vacancy_id
 order by counter desc
+```
+```
+SELECT * from (SELECT search_result.vacancy_id, search_result.counter, vacancy_content.id, vacancy_content.title, vacancy_content.footer, vacancy_content.header, vacancy_content.requirements, vacancy_content.duties, vacancy_content.conditions, vacancy_content.date, vacancy_content.locality, vacancy_content.region, vacancy_content.company
+FROM (SELECT cache_index.vacancy_id AS vacancy_id, count(cache_index.vacancy_id) AS counter
+FROM (SELECT index_map.original_index AS original_index
+FROM index_map
+WHERE index_map.extended_index = 'python') AS times JOIN cache_index ON times.original_index = cache_index.original_index
+GROUP BY cache_index.vacancy_id
+ORDER BY counter
+DESC) AS search_result
+    JOIN vacancy_content ON search_result.vacancy_id = vacancy_content.id) as test
+
+left join likes_info on test.vacancy_id = likes_info.vacancy_id
+where likes_info.vacancy_id is null
+ORDER BY test.counter DESC
+LIMIT 10
 ```
