@@ -60,3 +60,11 @@ cache_index = Table(
     Column('vacancy_id', Integer)
 
 )
+
+user_enter = Table(
+    "user_enter",
+    metadata,
+    Column('user_id', Integer),
+    Column('chat_id', Integer),
+    Column('date', Date)
+)

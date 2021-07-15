@@ -103,6 +103,13 @@ class Updater(BaseModel):
 
         return text
 
+    def get_user_id(self):
+        if self.its_callback():
+            user_id = self.callback_query.message.frm.id
+        else:
+            user_id = self.message.frm.id
+        return user_id
+
 
 data_for_callback = {
     "update_id": 632560344,
@@ -219,3 +226,9 @@ data = {
 }
 
 m = Updater(**data)
+
+response_from_tlg = {
+    "ok": False,
+    "error_code": 400,
+    "description": "Bad Request: message text is empty"
+}
