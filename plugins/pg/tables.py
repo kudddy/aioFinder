@@ -62,9 +62,19 @@ cache_index = Table(
 )
 
 user_enter = Table(
-    "user_enter",
+    'user_enter',
     metadata,
     Column('user_id', Integer),
     Column('chat_id', Integer),
     Column('date', Date)
+)
+
+likes_info = Table(
+    'likes_info',
+    metadata,
+    Column('user_id', Integer),
+    Column('chat_id', Integer),
+    Column('date', Date),
+    Column('vacancy_id', Integer),
+    Column('like', Integer)
 )

@@ -5,7 +5,7 @@ from plugins.systems import Systems
 from plugins.config import cfg
 from plugins.helper import send_message, edit_message
 from plugins.pg.query import generate_search_query
-from plugins.pg.tables import user_enter
+from plugins.pg.tables import user_enter, likes_info
 
 
 async def hello_message(m: Updater,
@@ -120,12 +120,13 @@ async def analyze_text_and_give_vacancy(m: Updater,
     """
     chat_id = m.get_chat_id()
     message_id = m.get_message_id()
+    user_id = m.get_user_id()
     text = m.get_text()
     # Подразумевается что пользователь уже вбил критерий поиска
     # TODO операцию можно выполнить один раз
     if await systems.local_cache.check(chat_id):
         # продолжаем итерировать по списку вакансий
-        if text == "Да":
+        if text in ("Лайк", "Дизлайк"):
             # TODO переименовать чтобы было более наглядно что мы вытаскваем инфо по вакансии
             await systems.local_cache.next_step(chat_id)
 
@@ -141,12 +142,12 @@ async def analyze_text_and_give_vacancy(m: Updater,
                 inline_keyboard = [
                     [
                         {
-                            "text": "Да",
-                            "callback_data": "Да"
+                            "text": "Лайк",
+                            "callback_data": "Лайк"
                         },
                         {
-                            "text": "Нет",
-                            "callback_data": "Нет"
+                            "text": "Дизлайк",
+                            "callback_data": "Дизлайк"
 
                         },
                     ],
@@ -167,20 +168,33 @@ async def analyze_text_and_give_vacancy(m: Updater,
                 # todo преобразовывать из html в text на уровне загрузки данных в базу
 
                 title: str = "💥 Название позиции: " + most_sim_vacancy_content['title'] + '\n'
-                text: str = title + "💥 Описание: " + html2text.html2text(most_sim_vacancy_content['header'])[
+                txt: str = title + "💥 Описание: " + html2text.html2text(most_sim_vacancy_content['header'])[
                                                       :4000] + '\n'
-                text: str = text + '\n' "Показать еще❓"
+                txt: str = txt + '\n' "Показать еще❓"
 
                 await edit_message(url=cfg.app.hosts.tlg.edit_message,
-                                   text=text,
+                                   text=txt,
                                    message_id=message_id,
                                    chat_id=chat_id,
                                    inline_keyboard=inline_keyboard)
 
-                await send_message(url=cfg.app.hosts.tlg.send_message,
-                                   chat_id=chat_id,
-                                   text=text,
-                                   inline_keyboard=inline_keyboard)
+                # отправляем в базу инфо по поводу оценки пользователя касательно вакансии
+
+                if text == "Лайк":
+                    like = 1
+                else:
+                    like = 0
+
+                query = likes_info.insert().values(
+                    user_id=user_id,
+                    chat_id=chat_id,
+                    date=datetime.now(),
+                    like=like,
+                    vacancy_id=int(most_sim_vacancy_content["id"])
+                )
+
+                await systems.pg.fetch(query)
+
                 return 1
             else:
                 text = '🤓 К сожалению, вакансий больше нет❗️'
@@ -228,12 +242,12 @@ async def analyze_text_and_give_vacancy(m: Updater,
             inline_keyboard = [
                 [
                     {
-                        "text": "Да",
-                        "callback_data": "Да"
+                        "text": "Лайк",
+                        "callback_data": "Лайк"
                     },
                     {
-                        "text": "Нет",
-                        "callback_data": "Нет"
+                        "text": "Дизлайк",
+                        "callback_data": "Дизлайк"
 
                     }
                 ],
