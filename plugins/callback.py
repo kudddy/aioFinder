@@ -1,10 +1,11 @@
 import html2text
-
+from datetime import datetime
 from message_schema import Updater
 from plugins.systems import Systems
 from plugins.config import cfg
 from plugins.helper import send_message, edit_message
 from plugins.pg.query import generate_search_query
+from plugins.pg.tables import user_enter
 
 
 async def hello_message(m: Updater,
@@ -17,6 +18,7 @@ async def hello_message(m: Updater,
     """
 
     chat_id = m.get_chat_id()
+    user_id = m.get_user_id()
 
     await systems.local_cache.clean(chat_id)
 
@@ -97,6 +99,15 @@ async def hello_message(m: Updater,
                        chat_id,
                        text,
                        inline_keyboard=inline_keyboard)
+
+    query = user_enter.insert().values(
+        user_id=user_id,
+        chat_id=chat_id,
+        date=datetime.now()
+    )
+
+    await systems.pg.fetch(query)
+
     return 1
 
 
@@ -113,7 +124,7 @@ async def analyze_text_and_give_vacancy(m: Updater,
     # Подразумевается что пользователь уже вбил критерий поиска
     # TODO операцию можно выполнить один раз
     if await systems.local_cache.check(chat_id):
-
+        # продолжаем итерировать по списку вакансий
         if text == "Да":
             # TODO переименовать чтобы было более наглядно что мы вытаскваем инфо по вакансии
             await systems.local_cache.next_step(chat_id)
@@ -145,6 +156,12 @@ async def analyze_text_and_give_vacancy(m: Updater,
                             "url": url,
                             "callback_data": ""
                         }
+                    ],
+                    [
+                        {
+                            "text": "Вернуться к выбору категории",
+                            "callback_data": "Вначало"
+                        }
                     ]
                 ]
                 # todo преобразовывать из html в text на уровне загрузки данных в базу
@@ -160,10 +177,10 @@ async def analyze_text_and_give_vacancy(m: Updater,
                                    chat_id=chat_id,
                                    inline_keyboard=inline_keyboard)
 
-                # await send_message(url=cfg.app.hosts.tlg.send_message,
-                #                    chat_id=chat_id,
-                #                    text=html2text.html2text(most_sim_vacancy_content['header']),
-                #                    remove_keyboard=True)
+                await send_message(url=cfg.app.hosts.tlg.send_message,
+                                   chat_id=chat_id,
+                                   text=text,
+                                   inline_keyboard=inline_keyboard)
                 return 1
             else:
                 text = '🤓 К сожалению, вакансий больше нет❗️'
@@ -172,6 +189,11 @@ async def analyze_text_and_give_vacancy(m: Updater,
                                    text,
                                    remove_keyboard=True)
                 return 0
+        # переводим клиента на экран с выбором категории поиска
+        elif text == "Вначало":
+            await hello_message(m, systems)
+            return 1
+        # заканчиваем диалог
         else:
             text = '💥 Пока, возвращайся еще❗️'
             await send_message(cfg.app.hosts.tlg.send_message,
@@ -221,7 +243,14 @@ async def analyze_text_and_give_vacancy(m: Updater,
                         "url": url,
                         "callback_data": ""
                     }
+                ],
+                [
+                    {
+                        "text": "Вернуться к выбору категории",
+                        "callback_data": "Вначало"
+                    }
                 ]
+
             ]
             # генерируем текст сообщения
             title: str = "💥 Название позиции: " + ready_content[step]['title'] + '\n'

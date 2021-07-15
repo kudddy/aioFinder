@@ -3,9 +3,15 @@
 import json
 import re
 import sys
+import logging
 from collections import defaultdict, Iterable
 
 from aiohttp_requests import requests
+
+logging.basicConfig(level=logging.DEBUG)
+log = logging.getLogger(__name__)
+
+log.setLevel(logging.DEBUG)
 
 
 async def send_message(url: str,
@@ -44,11 +50,16 @@ async def send_message(url: str,
         "Content-Type": "application/json"
     }
 
-    res = await requests.get(url, headers=headers, data=json.dumps(payload), ssl=False)
+    response = await requests.get(url, headers=headers, data=json.dumps(payload), ssl=False)
 
-    res = await res.json()
+    response = await response.json()
 
-    print(res)
+    res = response.get("ok")
+
+    if res:
+        log.debug("request with payload: %s success delivered to tlg", payload)
+    else:
+        log.debug("request with payload: %s delivered to tlg with error: %s", payload, response)
 
 
 async def edit_message(url: str,
@@ -81,11 +92,16 @@ async def edit_message(url: str,
                 "inline_keyboard": inline_keyboard}
             })
 
-    res = await requests.get(url, headers=headers, data=json.dumps(payload), ssl=False)
+    response = await requests.get(url, headers=headers, data=json.dumps(payload), ssl=False)
 
-    res = await res.json()
+    response = await response.json()
 
-    print(res)
+    res = response.get("ok")
+
+    if res:
+        log.debug("request with payload: %s success delivered to tlg", payload)
+    else:
+        log.debug("request with payload: %s delivered to tlg with error: %s", payload, response)
 
 
 def escape_markdown(text: str, version: int = 1, entity_type: str = None) -> str:
@@ -113,6 +129,7 @@ def escape_markdown(text: str, version: int = 1, entity_type: str = None) -> str
         raise ValueError('Markdown version must be either 1 or 2!')
 
     return re.sub(f'([{re.escape(escape_chars)}])', r'\\\1', text)
+
 
 # class GetVac:
 #     def __init__(self, vacs_filename):

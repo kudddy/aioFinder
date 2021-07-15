@@ -84,6 +84,16 @@ create table cache_index
 	vacancy_id int,
 );
 ```
+user_enter
+```
+create table user_enter
+(
+	user_id int,
+	chat_id int,
+	data date
+);
+```
+
 
 ## Типовые операции с таблицей
 переименование таблицы
