@@ -5,7 +5,7 @@ from plugins.systems import Systems
 from plugins.config import cfg
 from plugins.helper import send_message, edit_message
 from plugins.pg.query import generate_search_query
-from plugins.pg.tables import user_enter, likes_info
+from plugins.pg.tables import user_enter
 
 
 async def hello_message(m: Updater,
@@ -126,7 +126,7 @@ async def analyze_text_and_give_vacancy(m: Updater,
     # TODO операцию можно выполнить один раз
     if await systems.local_cache.check(chat_id):
         # продолжаем итерировать по списку вакансий
-        if text in ("Лайк", "Дизлайк"):
+        if text == "Следующая":
             # TODO переименовать чтобы было более наглядно что мы вытаскваем инфо по вакансии
             await systems.local_cache.next_step(chat_id)
 
@@ -142,12 +142,12 @@ async def analyze_text_and_give_vacancy(m: Updater,
                 inline_keyboard = [
                     [
                         {
-                            "text": "Лайк",
-                            "callback_data": "Лайк"
+                            "text": "Следующая",
+                            "callback_data": "Следующая"
                         },
                         {
-                            "text": "Дизлайк",
-                            "callback_data": "Дизлайк"
+                            "text": "Вернуться к выбору категории",
+                            "callback_data": "В начало"
 
                         },
                     ],
@@ -156,12 +156,6 @@ async def analyze_text_and_give_vacancy(m: Updater,
                             "text": "Описание и отклик",
                             "url": url,
                             "callback_data": ""
-                        }
-                    ],
-                    [
-                        {
-                            "text": "Вернуться к выбору категории",
-                            "callback_data": "Вначало"
                         }
                     ]
                 ]
@@ -179,21 +173,6 @@ async def analyze_text_and_give_vacancy(m: Updater,
                                    inline_keyboard=inline_keyboard)
 
                 # отправляем в базу инфо по поводу оценки пользователя касательно вакансии
-
-                if text == "Лайк":
-                    like = 1
-                else:
-                    like = 0
-
-                query = likes_info.insert().values(
-                    user_id=user_id,
-                    chat_id=chat_id,
-                    date=datetime.now(),
-                    like=like,
-                    vacancy_id=int(most_sim_vacancy_content["id"])
-                )
-
-                await systems.pg.fetch(query)
 
                 return 1
             else:
