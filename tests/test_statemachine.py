@@ -317,6 +317,6 @@ class TestInternalSystem(asynctest.TestCase):
 
         state_number = await stage.next(message)
 
-        self.assertEqual(state_number, 0)
+        self.assertEqual(state_number, 1)
 
         global_cache.cache.close()

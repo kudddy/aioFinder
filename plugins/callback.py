@@ -1,11 +1,12 @@
-import html2text
 from datetime import datetime
 from message_schema import Updater
 from plugins.systems import Systems
 from plugins.config import cfg
-from plugins.helper import send_message, edit_message
-from plugins.pg.query import generate_search_query
-from plugins.pg.tables import user_enter
+from plugins.helper import send_message, edit_message, generate_message_body
+from plugins.pg.query import generate_search_query, sorting_by_viewed_vacancies, main_search_query
+from plugins.pg.tables import user_enter, likes_info, viewed_vacancy
+from plugins.keybords import inline_keyboard_for_hello, \
+    generate_pagination_keyboard, generate_check_box_keyboard, generate_emo_keyboard
 
 
 async def hello_message(m: Updater,
@@ -23,82 +24,11 @@ async def hello_message(m: Updater,
     await systems.local_cache.clean(chat_id)
 
     text = "💥 Приветствую, я найду для тебя работу. Введите свой ключевой навык❗"
-    inline_keyboard = [
-        [
-            {
-                "text": "JavaScript",
-                "callback_data": "JavaScript"
-            },
-            {
-                "text": "Python",
-                "callback_data": "Python"
 
-            },
-        ],
-        [
-            {
-                "text": "Java, Scala",
-                "callback_data": "Java, Scala"
-            },
-            {
-                "text": "C/C++, Assembler",
-                "callback_data": "C/C++, Assembler"
-            }
-        ],
-        [
-            {
-                "text": "PHP",
-                "callback_data": "PHP"
-            },
-            {
-                "text": ".NET",
-                "callback_data": ".NET"
-            },
-            {
-                "text": "QA",
-                "callback_data": "QA"
-            }
-        ],
-        [
-            {
-                "text": "DevOps",
-                "callback_data": "DevOps"
-            },
-            {
-                "text": "IOS",
-                "callback_data": "IOS"
-            },
-            {
-                "text": "Golang",
-                "callback_data": "Golang"
-            }
-        ],
-        [
-            {
-                "text": "Data Science",
-                "callback_data": "DS, Data Science"
-            },
-            {
-                "text": "Security",
-                "callback_data": "Security, безопасность"
-            },
-        ],
-        [
-            {
-                "text": "Analyst",
-                "callback_data": "Analyst"
-            },
-            {
-                "text": "Manager",
-                "callback_data": "Manager"
-            }
-        ]
-
-    ]
     await send_message(cfg.app.hosts.tlg.send_message,
                        chat_id,
                        text,
-                       inline_keyboard=inline_keyboard)
+                       inline_keyboard=inline_keyboard_for_hello)
 
     query = user_enter.insert().values(
         user_id=user_id,
@@ -120,13 +50,13 @@ async def analyze_text_and_give_vacancy(m: Updater,
     """
     chat_id = m.get_chat_id()
     message_id = m.get_message_id()
-    user_id = m.get_user_id()
     text = m.get_text()
     # Подразумевается что пользователь уже вбил критерий поиска
     # TODO операцию можно выполнить один раз
     if await systems.local_cache.check(chat_id):
         # продолжаем итерировать по списку вакансий
         if text == "Следующая":
+
             # TODO переименовать чтобы было более наглядно что мы вытаскваем инфо по вакансии
             await systems.local_cache.next_step(chat_id)
 
@@ -139,40 +69,25 @@ async def analyze_text_and_give_vacancy(m: Updater,
 
                 url: str = cfg.app.hosts.sbervacanсy.host.format(most_sim_vacancy_content["id"])
 
-                inline_keyboard = [
-                    [
-                        {
-                            "text": "Следующая",
-                            "callback_data": "Следующая"
-                        },
-                        {
-                            "text": "Вернуться к выбору категории",
-                            "callback_data": "В начало"
-
-                        },
-                    ],
-                    [
-                        {
-                            "text": "Описание и отклик",
-                            "url": url,
-                            "callback_data": ""
-                        }
-                    ]
-                ]
                 # todo преобразовывать из html в text на уровне загрузки данных в базу
 
-                title: str = "💥 Название позиции: " + most_sim_vacancy_content['title'] + '\n'
-                txt: str = title + "💥 Описание: " + html2text.html2text(most_sim_vacancy_content['header'])[
-                                                      :4000] + '\n'
-                txt: str = txt + '\n' "Показать еще❓"
+                message_body: str = generate_message_body(most_sim_vacancy_content)
 
                 await edit_message(url=cfg.app.hosts.tlg.edit_message,
-                                   text=txt,
+                                   text=message_body,
                                    message_id=message_id,
                                    chat_id=chat_id,
-                                   inline_keyboard=inline_keyboard)
+                                   inline_keyboard=generate_pagination_keyboard(url))
 
-                # отправляем в базу инфо по поводу оценки пользователя касательно вакансии
+                # Пишем уже просмотренные вакансии
+                query = viewed_vacancy.insert().values(
+                    user_id=m.get_user_id(),
+                    chat_id=chat_id,
+                    date=datetime.now(),
+                    vacancy_id=int(most_sim_vacancy_content["id"])
+                )
+
+                await systems.pg.fetch(query)
 
                 return 1
             else:
@@ -182,8 +97,50 @@ async def analyze_text_and_give_vacancy(m: Updater,
                                    text,
                                    remove_keyboard=True)
                 return 0
+        elif text == "В избранное":
+
+            most_sim_vacancy_content = await systems.local_cache.give_cache(chat_id)
+
+            url: str = cfg.app.hosts.sbervacanсy.host.format(most_sim_vacancy_content["id"])
+
+            # todo преобразовывать из html в text на уровне загрузки данных в базу
+
+            message_body: str = generate_message_body(most_sim_vacancy_content)
+
+            await edit_message(url=cfg.app.hosts.tlg.edit_message,
+                               text=message_body,
+                               message_id=message_id,
+                               chat_id=chat_id,
+                               inline_keyboard=generate_check_box_keyboard(url))
+
+            query = likes_info.insert().values(
+                user_id=m.get_user_id(),
+                chat_id=chat_id,
+                date=datetime.now(),
+                vacancy_id=int(most_sim_vacancy_content["id"])
+            )
+
+            await systems.pg.fetch(query)
+
+            return 1
+
+        elif text == "Добавил":
+            most_sim_vacancy_content = await systems.local_cache.give_cache(chat_id)
+
+            url: str = cfg.app.hosts.sbervacanсy.host.format(most_sim_vacancy_content["id"])
+
+            message_body: str = generate_message_body(most_sim_vacancy_content)
+
+            await edit_message(url=cfg.app.hosts.tlg.edit_message,
+                               text=message_body,
+                               message_id=message_id,
+                               chat_id=chat_id,
+                               inline_keyboard=generate_emo_keyboard(url))
+
+            return 1
+
         # переводим клиента на экран с выбором категории поиска
-        elif text == "Вначало":
+        elif text == "В начало":
             await hello_message(m, systems)
             return 1
         # заканчиваем диалог
@@ -198,7 +155,9 @@ async def analyze_text_and_give_vacancy(m: Updater,
     else:
 
         list_of_tokens: list = systems.tokenizer.clean_query(text)
-        query = generate_search_query(list_of_tokens)
+        query = main_search_query(list_of_tokens)
+
+        query = sorting_by_viewed_vacancies(query)
 
         ready_content = []
         # columns = ["id", "title", "footer", "header",
@@ -218,42 +177,22 @@ async def analyze_text_and_give_vacancy(m: Updater,
 
             url: str = cfg.app.hosts.sbervacanсy.host.format(ready_content[step]["id"])
 
-            inline_keyboard = [
-                [
-                    {
-                        "text": "Лайк",
-                        "callback_data": "Лайк"
-                    },
-                    {
-                        "text": "Дизлайк",
-                        "callback_data": "Дизлайк"
-
-                    }
-                ],
-                [
-                    {
-                        "text": "Описание и отклик",
-                        "url": url,
-                        "callback_data": ""
-                    }
-                ],
-                [
-                    {
-                        "text": "Вернуться к выбору категории",
-                        "callback_data": "Вначало"
-                    }
-                ]
-
-            ]
-            # генерируем текст сообщения
-            title: str = "💥 Название позиции: " + ready_content[step]['title'] + '\n'
-            text: str = title + "💥 Описание: " + html2text.html2text(ready_content[step]['header'])[:4000] + '\n'
-            text: str = text + '\n' "Показать еще❓"
+            message_body = generate_message_body(ready_content[step])
 
             await send_message(cfg.app.hosts.tlg.send_message,
                                chat_id,
-                               text,
-                               inline_keyboard=inline_keyboard)
+                               message_body,
+                               inline_keyboard=generate_pagination_keyboard(url))
+
+            # Пишем уже просмотренные вакансии
+            query = viewed_vacancy.insert().values(
+                user_id=m.get_user_id(),
+                chat_id=chat_id,
+                date=datetime.now(),
+                vacancy_id=int(ready_content[step]["id"])
+            )
+
+            await systems.pg.fetch(query)
             return 1
         else:
             text = '🤓 К сожалению, я не нашел вакансии:(️'

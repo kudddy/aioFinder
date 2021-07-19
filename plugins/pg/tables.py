@@ -75,6 +75,15 @@ likes_info = Table(
     Column('user_id', Integer),
     Column('chat_id', Integer),
     Column('date', Date),
-    Column('vacancy_id', Integer),
-    Column('like', Integer)
+    Column('vacancy_id', Integer)
+)
+
+viewed_vacancy = Table(
+    'viewed_vacancy',
+    metadata,
+    Column('user_id', Integer),
+    Column('chat_id', Integer),
+    Column('date', Date),
+    Column('vacancy_id', Integer)
+
 )

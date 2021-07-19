@@ -93,19 +93,27 @@ create table user_enter
 	data date
 );
 ```
-
-```
 likes_info
+```
+
 create table likes_info
 (
 	user_id int,
 	chat_id int,
 	date date,
-	"like" int,
     "vacancy_id": int
 );
 ```
-
+viewed_vacancy
+```
+create table viewed_vacancy
+(
+	user_id int,
+	chat_id int,
+	date date,
+	vacancy_id int
+);
+```
 
 ## Типовые операции с таблицей
 переименование таблицы
