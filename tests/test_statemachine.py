@@ -278,7 +278,7 @@ class TestInternalSystem(asynctest.TestCase):
                     "type": "private"
                 },
                 "date": 1589404439,
-                "text": "Лайк"
+                "text": "Следующая"
             }
         }
 
@@ -309,7 +309,7 @@ class TestInternalSystem(asynctest.TestCase):
                     "type": "private"
                 },
                 "date": 1589404439,
-                "text": "Дизлайк"
+                "text": "В начало"
             }
         }
 

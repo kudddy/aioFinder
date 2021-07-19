@@ -4,6 +4,9 @@ import json
 import re
 import sys
 import logging
+
+import html2text
+
 from collections import defaultdict, Iterable
 
 from aiohttp_requests import requests
@@ -12,6 +15,14 @@ logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
 log.setLevel(logging.DEBUG)
+
+
+def generate_message_body(vacancy_info: dict) -> str:
+    title: str = "💥 Название позиции: " + vacancy_info['title'] + '\n'
+    description: str = title + "💥 Описание: " + html2text.html2text(vacancy_info['header'])[
+                                                 :4000] + '\n'
+    message_body: str = description + '\n' "Показать еще❓"
+    return message_body
 
 
 async def send_message(url: str,
@@ -56,6 +67,9 @@ async def send_message(url: str,
 
     res = response.get("ok")
 
+    # маскирование текста
+    payload["text"] = "*******"
+
     if res:
         log.debug("request with payload: %s success delivered to tlg", payload)
     else:
@@ -97,6 +111,8 @@ async def edit_message(url: str,
     response = await response.json()
 
     res = response.get("ok")
+
+    payload["text"] = "*******"
 
     if res:
         log.debug("request with payload: %s success delivered to tlg", payload)
