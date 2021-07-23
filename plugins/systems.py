@@ -12,16 +12,18 @@ class LocalCacheForCallbackFunc:
     def __init__(self, cache: AioMemCache):
         self.mc = cache
 
-    async def caching(self, chat_id: int, step: int, arr: List) -> None:
+    async def caching(self, chat_id: int, step: int, is_likes_display: bool, arr: List) -> None:
 
         val = await self.mc.get(chat_id)
         if val:
             val['cache_vacancy_result'] = arr
-            val['cache_iter'] = step
+            val['cache_iter'] = step,
+            val['is_likes_display'] = is_likes_display
         else:
             val = {
                 'cache_vacancy_result': arr,
-                'cache_iter': step
+                'cache_iter': step,
+                'is_likes_display': is_likes_display
             }
 
         await self.mc.set(chat_id, val)
@@ -35,11 +37,11 @@ class LocalCacheForCallbackFunc:
         val = await self.mc.get(chat_id)
         if val:
             try:
-                return val['cache_vacancy_result'][val['cache_iter']]
+                return val['cache_vacancy_result'][val['cache_iter'][0]], val['is_likes_display']
             except IndexError as e:
-                return False
+                return False, False
         else:
-            return False
+            return False, False
 
     async def check(self, chat_id: int) -> bool:
         val = await self.mc.get(chat_id)
@@ -55,7 +57,7 @@ class LocalCacheForCallbackFunc:
 
     async def next_step(self, chat_id: int) -> None:
         val = await self.mc.get(chat_id)
-        val['cache_iter'] += 1
+        val['cache_iter'][0] += 1
         await self.mc.set(chat_id, val)
 
 

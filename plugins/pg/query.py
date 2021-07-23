@@ -1,6 +1,6 @@
 from sqlalchemy import select, func, desc, or_, Table
 
-from plugins.pg.tables import index_map, cache_index, vacancy_content, viewed_vacancy
+from plugins.pg.tables import index_map, cache_index, vacancy_content, viewed_vacancy, likes_info
 from plugins.config import cfg
 
 
@@ -59,3 +59,14 @@ def sorting_by_viewed_vacancies(done_search_query: Table):
         desc(done_search_query.c.counter)).limit(cfg.app.constants.number_of_recs)
 
     return query_with_filter
+
+
+def give_me_likes_vacancy(chat_id: int):
+    likes = select([likes_info.c.vacancy_id]). \
+        where(likes_info.c.chat_id == chat_id).distinct(likes_info.c.vacancy_id).alias("likes")
+
+    j = likes.join(vacancy_content, vacancy_content.c.id == likes.c.vacancy_id)
+
+    query = select([vacancy_content.c.id, vacancy_content.c.title, vacancy_content.c.header]).select_from(j)
+
+    return query
