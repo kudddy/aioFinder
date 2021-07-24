@@ -31,7 +31,7 @@ docker run --name my-memcache -I 5m -p 11211:11211 -d memcached
 ```
 gcloud container clusters get-credentials cluster-1 --zone europe-north1-a --project disco-sector-317101
 ```
-
+## kubectl
 подключение к контейнеру в gcloud
 ```
 kubectl exec -it <POD NAME> -c <CONTAINER NAME> -- bash
@@ -42,6 +42,15 @@ kubectl exec -it backend-deployment-6856bfb657-mrpnp -c iseebackend -- bash
 ```
 ```
 kubectl expose pod memcached-deployment-d86cb8f88-bnpsr --name some-memcached-11211 --type LoadBalancer --port 11211 --protocol TCP
+```
+удаление deployments и в следствии всех pod
+```
+kubectl delete deployments tlg-backend-deployment
+```
+просмотр логов всех pods в рамках скейла c помощью replica set controller
+-f - параметр который позволяет смотреть логи в интерактивном режиме
+```
+kubectl logs -f -l app=tlgbackend
 ```
 
 ## postgres

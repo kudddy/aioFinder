@@ -66,6 +66,7 @@ user_enter = Table(
     metadata,
     Column('user_id', Integer),
     Column('chat_id', Integer),
+    Column('username', String),
     Column('date', Date)
 )
 
