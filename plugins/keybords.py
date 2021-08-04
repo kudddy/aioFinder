@@ -2,6 +2,26 @@ from random import choice
 
 emoticons = ['🔥', '❤', '️🤡', '🤮', '💋', '👅', '👀', '🐒', '🍒', '🥟', '🍤']
 
+
+# reveal_button = [
+#     {
+#         "text": "Раскрыть полностью?",
+#         "callback_data": "Раскрыть"
+#     }
+# ]
+
+def get_reveal_button(url: str):
+    reveal_button = [
+        {
+            "text": "Полное описание и отклик",
+            "callback_data": "",
+            "url": url,
+
+        }
+    ]
+    return reveal_button
+
+
 inline_keyboard_for_hello = [
     [
         {
@@ -76,22 +96,30 @@ inline_keyboard_for_hello = [
 ]
 
 
-def generate_pagination_keyboard(url: str):
+def generate_pagination_keyboard(url: str, reveal_text: bool = True):
+    """
+    Генерация клавиатуры для самого первого экрана
+    :param reveal_text: выводить кнопку  "Раскрыть" или нет
+    :param url: ссылка на вакансию
+    :return:
+    """
     inline_keyboard_for_pagination = [
         [
-            {
-                "text": "Следующая",
-                "callback_data": "Следующая"
-            },
+
             {
                 "text": "Назад к выбору",
                 "callback_data": "В начало"
 
             },
+
+            {
+                "text": "Следующая",
+                "callback_data": "Следующая"
+            }
         ],
         [
             {
-                "text": "Добавить в избранное",
+                "text": "В избранное",
                 "callback_data": "В избранное"
             },
             {
@@ -105,28 +133,37 @@ def generate_pagination_keyboard(url: str):
                 "callback_data": "Очистить"
             }
         ],
-        [
-            {
-                "text": "Описание и отклик",
-                "url": url,
-                "callback_data": ""
-            }
-        ]
+        # [
+        #     {
+        #         "text": "Описание и отклик",
+        #         "url": url,
+        #         "callback_data": ""
+        #     }
+        # ]
     ]
+
+    if reveal_text:
+        inline_keyboard_for_pagination.insert(0, get_reveal_button(url))
     return inline_keyboard_for_pagination
 
 
-def generate_check_box_keyboard(url: str):
+def generate_check_box_keyboard(url: str, reveal_text: bool = True):
+    """
+    Функция генерации кнопок в момент нажатия на кнопку "Добавить в избанное"
+    :param reveal_text: выводить кнопку  "Раскрыть" или нет
+    :param url: ссылка на вакансию
+    :return: готовые массив с кнопками
+    """
     inline_keyboard_for_check_box = [
         [
-            {
-                "text": "Следующая",
-                "callback_data": "Следующая"
-            },
             {
                 "text": "Назад к выбору",
                 "callback_data": "В начало"
 
+            },
+            {
+                "text": "Следующая",
+                "callback_data": "Следующая"
             },
         ],
         [
@@ -153,21 +190,29 @@ def generate_check_box_keyboard(url: str):
             }
         ]
     ]
+    if reveal_text:
+        inline_keyboard_for_check_box.insert(0, get_reveal_button(url))
     return inline_keyboard_for_check_box
 
 
-def generate_emo_keyboard(url: str):
+def generate_emo_keyboard(url: str, reveal_text: bool = True):
+    """
+    Функция генерирует кнопки в момент, когда пользователь повторно нажимает на "Добавить в избранное"
+    :param reveal_text:
+    :param url:
+    :return:
+    """
     inline_keyboard_for_emo = [
         [
-            {
-                "text": "Следующая",
-                "callback_data": "Следующая"
-            },
             {
                 "text": "Назад к выбору",
                 "callback_data": "В начало"
 
             },
+            {
+                "text": "Следующая",
+                "callback_data": "Следующая"
+            }
         ],
         [
             {
@@ -185,34 +230,45 @@ def generate_emo_keyboard(url: str):
                 "callback_data": "Очистил"
             }
         ],
-        [
-            {
-                "text": "Описание и отклик",
-                "url": url,
-                "callback_data": ""
-            }
-        ]
+        # [
+        #     {
+        #         "text": "Описание и отклик",
+        #         "url": url,
+        #         "callback_data": ""
+        #     }
+        # ]
     ]
+
+    if reveal_text:
+        inline_keyboard_for_emo.insert(0, get_reveal_button(url))
     return inline_keyboard_for_emo
 
 
-def generate_check_box_for_clean(url: str, double_click: bool = False):
+def generate_check_box_for_clean(url: str, double_click: bool = False, reveal_text: bool = True):
+    """
+    Фукция генерирует кнопки в момент нажатия на кнопку "Очистить"
+    :param reveal_text:
+    :param url:
+    :param double_click:
+    :return:
+    """
+
     if double_click:
         inline_keyboard_for_pagination = [
             [
-                {
-                    "text": "Следующая",
-                    "callback_data": "Следующая"
-                },
                 {
                     "text": "Назад к выбору",
                     "callback_data": "В начало"
 
                 },
+                {
+                    "text": "Следующая",
+                    "callback_data": "Следующая"
+                },
             ],
             [
                 {
-                    "text": "Добавить в избранное",
+                    "text": "В избранное",
                     "callback_data": "В избранное"
                 },
                 {
@@ -226,30 +282,30 @@ def generate_check_box_for_clean(url: str, double_click: bool = False):
                     "callback_data": "Очистил"
                 }
             ],
-            [
-                {
-                    "text": "Описание и отклик",
-                    "url": url,
-                    "callback_data": ""
-                }
-            ]
+            # [
+            #     {
+            #         "text": "Описание и отклик",
+            #         "url": url,
+            #         "callback_data": ""
+            #     }
+            # ]
         ]
     else:
         inline_keyboard_for_pagination = [
             [
                 {
-                    "text": "Следующая",
-                    "callback_data": "Следующая"
-                },
-                {
                     "text": "Назад к выбору",
                     "callback_data": "В начало"
 
                 },
+                {
+                    "text": "Следующая",
+                    "callback_data": "Следующая"
+                },
             ],
             [
                 {
-                    "text": "Добавить в избранное",
+                    "text": "В избранное",
                     "callback_data": "В избранное"
                 },
                 {
@@ -263,37 +319,49 @@ def generate_check_box_for_clean(url: str, double_click: bool = False):
                     "callback_data": "Очистил"
                 }
             ],
-            [
-                {
-                    "text": "Описание и отклик",
-                    "url": url,
-                    "callback_data": ""
-                }
-            ]
+            # [
+            #     {
+            #         "text": "Описание и отклик",
+            #         "url": url,
+            #         "callback_data": ""
+            #     }
+            # ]
         ]
+
+    if reveal_text:
+        inline_keyboard_for_pagination.insert(0, get_reveal_button(url))
 
     return inline_keyboard_for_pagination
 
 
-def generate_keyboard_for_likes(url):
+def generate_keyboard_for_likes(url: str, reveal_text: bool = True):
+    """
+    Кнопка для показала избранных позиций
+    :param reveal_text:
+    :param url:
+    :return:
+    """
+
     inline_keyboard_for_likes = [
         [
-            {
-                "text": "Следующая",
-                "callback_data": "Следующая"
-            },
             {
                 "text": "Назад к выбору",
                 "callback_data": "В начало"
 
             },
-        ],
-        [
             {
-                "text": "Описание и отклик",
-                "url": url,
-                "callback_data": ""
-            }
-        ]
+                "text": "Следующая",
+                "callback_data": "Следующая"
+            },
+        ],
+        # [
+        #     {
+        #         "text": "Описание и отклик",
+        #         "url": url,
+        #         "callback_data": ""
+        #     }
+        # ]
     ]
+    if reveal_text:
+        inline_keyboard_for_likes.insert(0, get_reveal_button(url))
     return inline_keyboard_for_likes

@@ -17,10 +17,16 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def generate_message_body(vacancy_info: dict) -> str:
+def generate_message_body(vacancy_info: dict, message_size: int = 500) -> str:
+    """
+    Генерируем сообщение для отправки
+    :param vacancy_info: информация по вакансии
+    :param message_size: дилина сообщения, по дефолту 500
+    :return: возвращает готовую строку для отправки
+    """
     title: str = "💥 Название позиции: " + vacancy_info['title'] + '\n'
     description: str = title + "💥 Описание: " + html2text.html2text(vacancy_info['header'])[
-                                                 :4000] + '\n'
+                                                 :message_size] + "..." + '\n'
     message_body: str = description + '\n' "Показать еще❓"
     return message_body
 
