@@ -3,7 +3,8 @@ from message_schema import Updater
 from plugins.systems import Systems
 from plugins.config import cfg
 from plugins.helper import send_message, edit_message, generate_message_body
-from plugins.pg.query import generate_search_query, sorting_by_viewed_vacancies, main_search_query, give_me_likes_vacancy
+from plugins.pg.query import generate_search_query, sorting_by_viewed_vacancies, main_search_query, \
+    give_me_likes_vacancy
 from plugins.pg.tables import user_enter, likes_info, viewed_vacancy
 from plugins.keybords import inline_keyboard_for_hello, \
     generate_pagination_keyboard, generate_check_box_keyboard, \
@@ -63,7 +64,8 @@ async def analyze_text_and_give_vacancy(m: Updater,
             # TODO переименовать чтобы было более наглядно что мы вытаскваем инфо по вакансии
             await systems.local_cache.next_step(chat_id)
 
-            most_sim_vacancy_content, is_likes_display = await systems.local_cache.give_cache(chat_id)
+            most_sim_vacancy_content, is_likes_display, _ = await systems.local_cache.give_cache(chat_id)
+
             if most_sim_vacancy_content:
 
                 # TODO обратить внимание на форматирование
@@ -110,19 +112,24 @@ async def analyze_text_and_give_vacancy(m: Updater,
                 return 0
         elif text == "В избранное":
 
-            most_sim_vacancy_content, _ = await systems.local_cache.give_cache(chat_id)
+            most_sim_vacancy_content, _, cache = await systems.local_cache.give_cache(chat_id)
+
+            reveal_text = cache["click_to_reveal"]
+
+            if reveal_text:
+                message_body: str = generate_message_body(most_sim_vacancy_content, message_size=4000)
+            else:
+                message_body: str = generate_message_body(most_sim_vacancy_content)
 
             url: str = cfg.app.hosts.sbervacanсy.host.format(most_sim_vacancy_content["id"])
 
             # todo преобразовывать из html в text на уровне загрузки данных в базу
 
-            message_body: str = generate_message_body(most_sim_vacancy_content)
-
             await edit_message(url=cfg.app.hosts.tlg.edit_message,
                                text=message_body,
                                message_id=message_id,
                                chat_id=chat_id,
-                               inline_keyboard=generate_check_box_keyboard(url))
+                               inline_keyboard=generate_check_box_keyboard(url, reveal_text))
 
             query = likes_info.insert().values(
                 user_id=m.get_user_id(),
@@ -139,48 +146,64 @@ async def analyze_text_and_give_vacancy(m: Updater,
 
             await systems.pg.fetch(query)
 
-            most_sim_vacancy_content, _ = await systems.local_cache.give_cache(chat_id)
+            most_sim_vacancy_content, _, cache = await systems.local_cache.give_cache(chat_id)
+
+            reveal_text = cache["click_to_reveal"]
+
+            if reveal_text:
+                message_body: str = generate_message_body(most_sim_vacancy_content, message_size=4000)
+            else:
+                message_body: str = generate_message_body(most_sim_vacancy_content)
 
             url: str = cfg.app.hosts.sbervacanсy.host.format(most_sim_vacancy_content["id"])
-
-            message_body: str = generate_message_body(most_sim_vacancy_content)
 
             await edit_message(url=cfg.app.hosts.tlg.edit_message,
                                text=message_body,
                                message_id=message_id,
                                chat_id=chat_id,
-                               inline_keyboard=generate_check_box_for_clean(url))
+                               inline_keyboard=generate_check_box_for_clean(url, reveal_text))
 
             return 1
 
         elif text == "Очистил":
             # очищаем историю просмотров
 
-            most_sim_vacancy_content, _ = await systems.local_cache.give_cache(chat_id)
+            most_sim_vacancy_content, _, cache = await systems.local_cache.give_cache(chat_id)
+
+            reveal_text = cache["click_to_reveal"]
 
             url: str = cfg.app.hosts.sbervacanсy.host.format(most_sim_vacancy_content["id"])
 
-            message_body: str = generate_message_body(most_sim_vacancy_content)
+            if reveal_text:
+                message_body: str = generate_message_body(most_sim_vacancy_content, message_size=4000)
+            else:
+                message_body: str = generate_message_body(most_sim_vacancy_content)
 
             await edit_message(url=cfg.app.hosts.tlg.edit_message,
                                text=message_body,
                                message_id=message_id,
                                chat_id=chat_id,
-                               inline_keyboard=generate_check_box_for_clean(url, double_click=True))
+                               inline_keyboard=generate_check_box_for_clean(url,
+                                                                            reveal_text=reveal_text,
+                                                                            double_click=True))
             return 1
 
         elif text == "Добавил":
-            most_sim_vacancy_content, _ = await systems.local_cache.give_cache(chat_id)
+            most_sim_vacancy_content, _, cache = await systems.local_cache.give_cache(chat_id)
+            reveal_text = cache["click_to_reveal"]
 
             url: str = cfg.app.hosts.sbervacanсy.host.format(most_sim_vacancy_content["id"])
 
-            message_body: str = generate_message_body(most_sim_vacancy_content)
+            if reveal_text:
+                message_body: str = generate_message_body(most_sim_vacancy_content, message_size=4000)
+            else:
+                message_body: str = generate_message_body(most_sim_vacancy_content)
 
             await edit_message(url=cfg.app.hosts.tlg.edit_message,
                                text=message_body,
                                message_id=message_id,
                                chat_id=chat_id,
-                               inline_keyboard=generate_emo_keyboard(url))
+                               inline_keyboard=generate_emo_keyboard(url, reveal_text=reveal_text))
 
             return 1
 
@@ -212,6 +235,33 @@ async def analyze_text_and_give_vacancy(m: Updater,
         elif text == "В начало":
             await hello_message(m, systems)
             return 1
+        elif text == "Раскрыть":
+            most_sim_vacancy_content, _, cache = await systems.local_cache.give_cache(chat_id)
+
+            url: str = cfg.app.hosts.sbervacanсy.host.format(most_sim_vacancy_content["id"])
+
+            message_body: str = generate_message_body(most_sim_vacancy_content, message_size=4000)
+            is_likes_display = cache['is_likes_display']
+            if is_likes_display:
+                keyboard = generate_keyboard_for_likes(url, reveal_text=False)
+            else:
+                keyboard = generate_pagination_keyboard(url, reveal_text=False)
+
+            await edit_message(url=cfg.app.hosts.tlg.edit_message,
+                               text=message_body,
+                               message_id=message_id,
+                               chat_id=chat_id,
+                               inline_keyboard=keyboard)
+
+            # пишем в кэш флаг, что описание позиции находится в раскрытом положении
+            await systems.local_cache.caching(chat_id,
+                                              step=cache['cache_iter'][0],
+                                              is_likes_display=is_likes_display,
+                                              click_to_reveal=True,
+                                              arr=cache["cache_vacancy_result"])
+
+            return 1
+
         # заканчиваем диалог
         else:
             text = '💥 Пока, возвращайся еще❗️'
