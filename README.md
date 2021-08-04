@@ -153,3 +153,7 @@ where likes_info.vacancy_id is null
 ORDER BY test.counter DESC
 LIMIT 10
 ```
+## TODO
+1. надо что то придумать с кнопкой "очистить историю просмотров"
+
+

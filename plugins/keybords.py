@@ -2,6 +2,7 @@ from random import choice
 
 emoticons = ['🔥', '❤', '️🤡', '🤮', '💋', '👅', '👀', '🐒', '🍒', '🥟', '🍤']
 
+
 # reveal_button = [
 #     {
 #         "text": "Раскрыть полностью?",
@@ -9,12 +10,16 @@ emoticons = ['🔥', '❤', '️🤡', '🤮', '💋', '👅', '👀', '🐒', '
 #     }
 # ]
 
-reveal_button = [
-    {
-        "text": "Раскрыть полностью?",
-        "callback_data": "Раскрыть"
-    }
-]
+def get_reveal_button(url: str):
+    reveal_button = [
+        {
+            "text": "Полное описание и отклик",
+            "callback_data": "",
+            "url": url,
+
+        }
+    ]
+    return reveal_button
 
 
 inline_keyboard_for_hello = [
@@ -128,17 +133,17 @@ def generate_pagination_keyboard(url: str, reveal_text: bool = True):
                 "callback_data": "Очистить"
             }
         ],
-        [
-            {
-                "text": "Описание и отклик",
-                "url": url,
-                "callback_data": ""
-            }
-        ]
+        # [
+        #     {
+        #         "text": "Описание и отклик",
+        #         "url": url,
+        #         "callback_data": ""
+        #     }
+        # ]
     ]
 
     if reveal_text:
-        inline_keyboard_for_pagination.insert(0, reveal_button)
+        inline_keyboard_for_pagination.insert(0, get_reveal_button(url))
     return inline_keyboard_for_pagination
 
 
@@ -186,7 +191,7 @@ def generate_check_box_keyboard(url: str, reveal_text: bool = True):
         ]
     ]
     if reveal_text:
-        inline_keyboard_for_check_box.insert(0, reveal_button)
+        inline_keyboard_for_check_box.insert(0, get_reveal_button(url))
     return inline_keyboard_for_check_box
 
 
@@ -235,7 +240,7 @@ def generate_emo_keyboard(url: str, reveal_text: bool = True):
     ]
 
     if reveal_text:
-        inline_keyboard_for_emo.insert(0, reveal_button)
+        inline_keyboard_for_emo.insert(0, get_reveal_button(url))
     return inline_keyboard_for_emo
 
 
@@ -277,13 +282,13 @@ def generate_check_box_for_clean(url: str, double_click: bool = False, reveal_te
                     "callback_data": "Очистил"
                 }
             ],
-            [
-                {
-                    "text": "Описание и отклик",
-                    "url": url,
-                    "callback_data": ""
-                }
-            ]
+            # [
+            #     {
+            #         "text": "Описание и отклик",
+            #         "url": url,
+            #         "callback_data": ""
+            #     }
+            # ]
         ]
     else:
         inline_keyboard_for_pagination = [
@@ -314,17 +319,17 @@ def generate_check_box_for_clean(url: str, double_click: bool = False, reveal_te
                     "callback_data": "Очистил"
                 }
             ],
-            [
-                {
-                    "text": "Описание и отклик",
-                    "url": url,
-                    "callback_data": ""
-                }
-            ]
+            # [
+            #     {
+            #         "text": "Описание и отклик",
+            #         "url": url,
+            #         "callback_data": ""
+            #     }
+            # ]
         ]
 
     if reveal_text:
-        inline_keyboard_for_pagination.insert(0, reveal_button)
+        inline_keyboard_for_pagination.insert(0, get_reveal_button(url))
 
     return inline_keyboard_for_pagination
 
@@ -349,14 +354,14 @@ def generate_keyboard_for_likes(url: str, reveal_text: bool = True):
                 "callback_data": "Следующая"
             },
         ],
-        [
-            {
-                "text": "Описание и отклик",
-                "url": url,
-                "callback_data": ""
-            }
-        ]
+        # [
+        #     {
+        #         "text": "Описание и отклик",
+        #         "url": url,
+        #         "callback_data": ""
+        #     }
+        # ]
     ]
     if reveal_text:
-        inline_keyboard_for_likes.insert(0, reveal_button)
+        inline_keyboard_for_likes.insert(0, get_reveal_button(url))
     return inline_keyboard_for_likes
