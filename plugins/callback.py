@@ -135,6 +135,9 @@ async def analyze_text_and_give_vacancy(m: Updater,
 
             # todo преобразовывать из html в text на уровне загрузки данных в базу
 
+            if user_id in (81432612, "81432612"):
+                extend_profile = True
+
             await edit_message(url=cfg.app.hosts.tlg.edit_message,
                                text=message_body,
                                message_id=message_id,
@@ -178,7 +181,6 @@ async def analyze_text_and_give_vacancy(m: Updater,
                                                                             extend_profile))
 
             return 1
-
         elif text == "Очистил":
             # очищаем историю просмотров
 
@@ -203,7 +205,6 @@ async def analyze_text_and_give_vacancy(m: Updater,
                                                                             double_click=True
                                                                             ))
             return 1
-
         elif text == "Добавил":
             most_sim_vacancy_content, _, cache = await systems.local_cache.give_cache(chat_id)
             reveal_text = cache["click_to_reveal"]
@@ -224,7 +225,6 @@ async def analyze_text_and_give_vacancy(m: Updater,
                                                                      extend_profile=extend_profile))
 
             return 1
-
         elif text == "Избранное":
             query = give_me_likes_vacancy(chat_id)
             ready_content = []
@@ -248,7 +248,6 @@ async def analyze_text_and_give_vacancy(m: Updater,
                                inline_keyboard=generate_keyboard_for_likes(url, extend_profile))
 
             return 1
-
         # переводим клиента на экран с выбором категории поиска
         elif text == "В начало":
             await hello_message(m, systems)
@@ -299,8 +298,6 @@ async def analyze_text_and_give_vacancy(m: Updater,
                                                                             reveal_text=True,
                                                                             extend_profile=extend_profile))
             return 1
-
-
         else:
             text = '💥 Пока, возвращайся еще❗️'
             await send_message(cfg.app.hosts.tlg.send_message,

@@ -52,7 +52,7 @@ class LocalCacheForCallbackFunc:
             try:
                 return val['cache_vacancy_result'][val['cache_iter'][0]], val['is_likes_display'][0], val
             except IndexError as e:
-                return False, False
+                return False, False, False
         else:
             return False, False
 

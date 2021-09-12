@@ -267,11 +267,11 @@ def generate_check_box_keyboard(url: str,
             clean_history()
         ],
         [
-            get_reveal_button(url)
+            get_reveal_button(url, extend_profile)[0]
         ]
     ]
-    if reveal_text:
-        inline_keyboard_for_check_box.insert(0, get_reveal_button(url, extend_profile))
+    # if reveal_text:
+    #     inline_keyboard_for_check_box.insert(0, get_reveal_button(url, extend_profile))
     return inline_keyboard_for_check_box
 
 
