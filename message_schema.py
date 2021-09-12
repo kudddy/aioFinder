@@ -105,14 +105,14 @@ class Updater(BaseModel):
 
     def get_user_id(self):
         if self.its_callback():
-            user_id = self.callback_query.message.frm.id
+            user_id = self.callback_query.frm.id
         else:
             user_id = self.message.frm.id
         return user_id
 
     def get_username(self):
         if self.its_callback():
-            username = self.callback_query.message.frm.username
+            username = self.callback_query.frm.username
         else:
             username = self.message.frm.username
         return username

@@ -1,14 +1,21 @@
+import logging
 from datetime import datetime
+
 from message_schema import Updater
 from plugins.systems import Systems
 from plugins.config import cfg
-from plugins.helper import send_message, edit_message, generate_message_body
+from plugins.helper import send_message, edit_message, generate_message_body, generate_auth_message
 from plugins.pg.query import generate_search_query, sorting_by_viewed_vacancies, main_search_query, \
     give_me_likes_vacancy
 from plugins.pg.tables import user_enter, likes_info, viewed_vacancy
 from plugins.keybords import inline_keyboard_for_hello, \
     generate_pagination_keyboard, generate_check_box_keyboard, \
     generate_emo_keyboard, generate_check_box_for_clean, generate_keyboard_for_likes
+
+logging.basicConfig(level=logging.DEBUG)
+log = logging.getLogger(__name__)
+
+log.setLevel(logging.DEBUG)
 
 
 async def hello_message(m: Updater,
@@ -52,9 +59,11 @@ async def analyze_text_and_give_vacancy(m: Updater,
     :param m: Входящее сообщение
     :return: ключ колбэк ф-ции, которую нужно вызвать
     """
+    user_id = m.get_user_id()
     chat_id = m.get_chat_id()
     message_id = m.get_message_id()
     text = m.get_text()
+    extend_profile: bool = False
     # Подразумевается что пользователь уже вбил критерий поиска
     # TODO операцию можно выполнить один раз
     if await systems.local_cache.check(chat_id):
@@ -78,19 +87,20 @@ async def analyze_text_and_give_vacancy(m: Updater,
 
                 message_body: str = generate_message_body(most_sim_vacancy_content)
 
-                if is_likes_display:
-                    await edit_message(url=cfg.app.hosts.tlg.edit_message,
-                                       text=message_body,
-                                       message_id=message_id,
-                                       chat_id=chat_id,
-                                       inline_keyboard=generate_keyboard_for_likes(url))
+                # Отдаем расширенный список только авторизованным пользователям
+                # TODO нужно оргаизовать на уровне базы
 
-                else:
-                    await edit_message(url=cfg.app.hosts.tlg.edit_message,
-                                       text=message_body,
-                                       message_id=message_id,
-                                       chat_id=chat_id,
-                                       inline_keyboard=generate_pagination_keyboard(url))
+                log.debug("user_id id_test - {}".format(user_id))
+                log.debug("user_id type - {}".format(type(user_id)))
+
+                if user_id in (81432612, "81432612"):
+                    extend_profile = True
+
+                await edit_message(url=cfg.app.hosts.tlg.edit_message,
+                                   text=message_body,
+                                   message_id=message_id,
+                                   chat_id=chat_id,
+                                   inline_keyboard=generate_pagination_keyboard(url, extend_profile))
 
                 # Пишем уже просмотренные вакансии
                 query = viewed_vacancy.insert().values(
@@ -125,11 +135,16 @@ async def analyze_text_and_give_vacancy(m: Updater,
 
             # todo преобразовывать из html в text на уровне загрузки данных в базу
 
+            if user_id in (81432612, "81432612"):
+                extend_profile = True
+
             await edit_message(url=cfg.app.hosts.tlg.edit_message,
                                text=message_body,
                                message_id=message_id,
                                chat_id=chat_id,
-                               inline_keyboard=generate_check_box_keyboard(url, reveal_text))
+                               inline_keyboard=generate_check_box_keyboard(url,
+                                                                           reveal_text,
+                                                                           extend_profile))
 
             query = likes_info.insert().values(
                 user_id=m.get_user_id(),
@@ -161,10 +176,11 @@ async def analyze_text_and_give_vacancy(m: Updater,
                                text=message_body,
                                message_id=message_id,
                                chat_id=chat_id,
-                               inline_keyboard=generate_check_box_for_clean(url, reveal_text))
+                               inline_keyboard=generate_check_box_for_clean(url,
+                                                                            reveal_text,
+                                                                            extend_profile))
 
             return 1
-
         elif text == "Очистил":
             # очищаем историю просмотров
 
@@ -184,10 +200,11 @@ async def analyze_text_and_give_vacancy(m: Updater,
                                message_id=message_id,
                                chat_id=chat_id,
                                inline_keyboard=generate_check_box_for_clean(url,
+                                                                            extend_profile=extend_profile,
                                                                             reveal_text=reveal_text,
-                                                                            double_click=True))
+                                                                            double_click=True
+                                                                            ))
             return 1
-
         elif text == "Добавил":
             most_sim_vacancy_content, _, cache = await systems.local_cache.give_cache(chat_id)
             reveal_text = cache["click_to_reveal"]
@@ -203,10 +220,11 @@ async def analyze_text_and_give_vacancy(m: Updater,
                                text=message_body,
                                message_id=message_id,
                                chat_id=chat_id,
-                               inline_keyboard=generate_emo_keyboard(url, reveal_text=reveal_text))
+                               inline_keyboard=generate_emo_keyboard(url,
+                                                                     reveal_text=reveal_text,
+                                                                     extend_profile=extend_profile))
 
             return 1
-
         elif text == "Избранное":
             query = give_me_likes_vacancy(chat_id)
             ready_content = []
@@ -227,10 +245,9 @@ async def analyze_text_and_give_vacancy(m: Updater,
             await send_message(cfg.app.hosts.tlg.send_message,
                                chat_id,
                                message_body,
-                               inline_keyboard=generate_keyboard_for_likes(url))
+                               inline_keyboard=generate_keyboard_for_likes(url, extend_profile))
 
             return 1
-
         # переводим клиента на экран с выбором категории поиска
         elif text == "В начало":
             await hello_message(m, systems)
@@ -243,9 +260,13 @@ async def analyze_text_and_give_vacancy(m: Updater,
             message_body: str = generate_message_body(most_sim_vacancy_content, message_size=4000)
             is_likes_display = cache['is_likes_display']
             if is_likes_display:
-                keyboard = generate_keyboard_for_likes(url, reveal_text=False)
+                keyboard = generate_keyboard_for_likes(url,
+                                                       reveal_text=False,
+                                                       extend_profile=extend_profile)
             else:
-                keyboard = generate_pagination_keyboard(url, reveal_text=False)
+                keyboard = generate_pagination_keyboard(url,
+                                                        reveal_text=False,
+                                                        extend_profile=extend_profile)
 
             await edit_message(url=cfg.app.hosts.tlg.edit_message,
                                text=message_body,
@@ -261,8 +282,22 @@ async def analyze_text_and_give_vacancy(m: Updater,
                                               arr=cache["cache_vacancy_result"])
 
             return 1
+        elif text == "Расширенный":
+            most_sim_vacancy_content, _, cache = await systems.local_cache.give_cache(chat_id)
 
-        # заканчиваем диалог
+            url_sf = cfg.app.hosts.sf.host.format(most_sim_vacancy_content["id"])
+            message_body = await generate_auth_message(url=url_sf, vacancy_id=most_sim_vacancy_content["id"])
+
+            url: str = cfg.app.hosts.sbervacanсy.host.format(most_sim_vacancy_content["id"])
+
+            await edit_message(url=cfg.app.hosts.tlg.edit_message,
+                               text=message_body,
+                               message_id=message_id,
+                               chat_id=chat_id,
+                               inline_keyboard=generate_pagination_keyboard(url,
+                                                                            reveal_text=True,
+                                                                            extend_profile=extend_profile))
+            return 1
         else:
             text = '💥 Пока, возвращайся еще❗️'
             await send_message(cfg.app.hosts.tlg.send_message,
@@ -299,10 +334,14 @@ async def analyze_text_and_give_vacancy(m: Updater,
 
             message_body = generate_message_body(ready_content[step])
 
+            if user_id in (81432612, "81432612"):
+                extend_profile = True
+
             await send_message(cfg.app.hosts.tlg.send_message,
                                chat_id,
                                message_body,
-                               inline_keyboard=generate_pagination_keyboard(url))
+                               inline_keyboard=generate_pagination_keyboard(url,
+                                                                            extend_profile=extend_profile))
 
             # Пишем уже просмотренные вакансии
             query = viewed_vacancy.insert().values(
