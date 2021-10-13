@@ -54,15 +54,15 @@ async def init_stages(app: Application):
     # коллбэк функции
     state = {0: hello_message, 1: analyze_text_and_give_vacancy, 2: goodbye_message}
     # коннектор к базе данных
-    global_cache = AioMemCache(app['mc'])
+    mc = AioMemCache(app['mc'])
     # инициализация локального кэша для реализации возможности кэшировать запросы к базе данных
     # TODO переименовать, т.к. по факту служит кэшем только для одного запроса
-    local_cache = LocalCacheForCallbackFunc(global_cache)
+    local_cache = LocalCacheForCallbackFunc(mc)
     # инициализируем токенизер
     tokenizer = QueryBuilder(out_clean='str', out_token='list')
     # Инициализация прокси объекта с объектами, которые нужны для сценария
     # TODO нейминг выглядит хуева
-    systems = Systems(mc=global_cache,
+    systems = Systems(mc=mc,
                       pg=app['pg'],
                       local_cache=local_cache,
                       tokenizer=tokenizer)

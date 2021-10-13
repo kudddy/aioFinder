@@ -4,12 +4,12 @@ import json
 import re
 import sys
 import logging
-
-import html2text
-
+import aiohttp
 from collections import defaultdict, Iterable
 
+import html2text
 from aiohttp_requests import requests
+from plugins.config import cfg
 
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
@@ -17,10 +17,16 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def generate_message_body(vacancy_info: dict) -> str:
+def generate_message_body(vacancy_info: dict, message_size: int = 500) -> str:
+    """
+    Генерируем сообщение для отправки
+    :param vacancy_info: информация по вакансии
+    :param message_size: дилина сообщения, по дефолту 500
+    :return: возвращает готовую строку для отправки
+    """
     title: str = "💥 Название позиции: " + vacancy_info['title'] + '\n'
     description: str = title + "💥 Описание: " + html2text.html2text(vacancy_info['header'])[
-                                                 :4000] + '\n'
+                                                 :message_size] + "..." + '\n'
     message_body: str = description + '\n' "Показать еще❓"
     return message_body
 
@@ -118,6 +124,32 @@ async def edit_message(url: str,
         log.debug("request with payload: %s success delivered to tlg", payload)
     else:
         log.debug("request with payload: %s delivered to tlg with error: %s", payload, response)
+
+
+async def generate_auth_message(url: str, vacancy_id: int) -> str:
+    log.debug("we requesting auth user message")
+    auth = aiohttp.BasicAuth(cfg.app.pwd.sf.us, cfg.app.pwd.sf.ps)
+
+    response = await requests.get(url.format(vacancy_id),
+                                  auth=auth,
+                                  ssl=False)
+    d = await response.json()
+
+    podr = "Подразделение: {}".format(d['d'].get("custsourcerTeam", "Нет"))
+    intr = "Интервьюр: {}".format(d['d'].get("custInterviewers", "Нет"))
+    max_zp = "Максимальная зп: {}".format(d['d'].get("salaryMax", "Нет"))
+    min_zp = "Минимальная зп: {}".format(d['d'].get("salaryMin", "Нет"))
+    block = "Блок: {}".format(d['d'].get("division", "Нет"))
+    bonus = "Бонус: {}".format(d['d'].get("bonusAmount", "Нет"))
+    vlk = "Вилка: {}".format(d['d'].get("custSalarySmart", "Нет"))
+    location = "Локация: {}".format(d['d'].get("custCity", "Нет"))
+    pos_name = "Название должности: {}".format(d['d'].get("custTitle", "Нет"))
+    year_average = "Годовой доход: {}".format(d['d'].get("custAverageYear", "Нет"))
+    time = "Сколько ищут? {} дней".format(d['d'].get("age", "Нет"))
+
+    result = podr + '\n' + intr + '\n' + max_zp + '\n' + min_zp + '\n' + block + '\n' + bonus + '\n' + vlk + '\n' + location + '\n' + pos_name + '\n' + year_average + '\n' + time + '\n'
+
+    return result
 
 
 def escape_markdown(text: str, version: int = 1, entity_type: str = None) -> str:
@@ -361,18 +393,6 @@ def structure_normalization(d: list) -> dict:
     return local_dict
 
 
-# class GetVac:
-#     def __init__(self, vacs_filename):
-#         self.vacs = pcl.get_pickle_file(vacs_filename)
-#
-#     def get_vac_by_id(self, key: int):
-#         if key in self.vacs.keys():
-#             return self.vacs[key]
-#         else:
-#             return False
-#
-#     def update_cache(self, new_cache):
-#         self.vacs = new_cache
 
 
 def remove_html_in_dict(text):

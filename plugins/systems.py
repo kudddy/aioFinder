@@ -12,18 +12,31 @@ class LocalCacheForCallbackFunc:
     def __init__(self, cache: AioMemCache):
         self.mc = cache
 
-    async def caching(self, chat_id: int, step: int, is_likes_display: bool, arr: List) -> None:
+    async def caching(self, chat_id: int, step: int,
+                      is_likes_display: bool, arr: List,
+                      click_to_reveal: bool = False) -> None:
+        """
+        Кеширование словаря значений в кэше
+        :param click_to_reveal: флаг, кликнули на показать полностью?
+        :param chat_id: уникальный идентификатор чата
+        :param step: номер стейна
+        :param is_likes_display: мы в экране с лайками или в основной ленте?
+        :param arr: массив с результатами запроса к базе
+        :return:
+        """
 
         val = await self.mc.get(chat_id)
         if val:
             val['cache_vacancy_result'] = arr
             val['cache_iter'] = step,
-            val['is_likes_display'] = is_likes_display
+            val['is_likes_display'] = is_likes_display,
+            val['click_to_reveal'] = click_to_reveal
         else:
             val = {
                 'cache_vacancy_result': arr,
                 'cache_iter': step,
-                'is_likes_display': is_likes_display
+                'is_likes_display': is_likes_display,
+                'click_to_reveal': click_to_reveal
             }
 
         await self.mc.set(chat_id, val)
@@ -37,9 +50,9 @@ class LocalCacheForCallbackFunc:
         val = await self.mc.get(chat_id)
         if val:
             try:
-                return val['cache_vacancy_result'][val['cache_iter'][0]], val['is_likes_display']
+                return val['cache_vacancy_result'][val['cache_iter'][0]], val['is_likes_display'][0], val
             except IndexError as e:
-                return False, False
+                return False, False, False
         else:
             return False, False, False
 
