@@ -35,6 +35,8 @@ class Stages:
         else:
             step = 0
 
+        # TODO здесь нужно вставить классификатор
+
         step = await self.stages[step].__call__(m, self.systems)
         key = await self.systems.global_cache.get(chat_id)
 

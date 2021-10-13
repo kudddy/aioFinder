@@ -197,16 +197,26 @@ async def analyze_text_and_give_vacancy(m: Updater,
                                               is_likes_display=True,
                                               arr=ready_content)
 
-            message_body = generate_message_body(ready_content[step])
+            if len(ready_content) > 0:
 
-            url: str = cfg.app.hosts.sbervacanсy.host.format(ready_content[step]["id"])
+                message_body = generate_message_body(ready_content[step])
 
-            await send_message(cfg.app.hosts.tlg.send_message,
-                               chat_id,
-                               message_body,
-                               inline_keyboard=generate_keyboard_for_likes(url))
+                url: str = cfg.app.hosts.sbervacanсy.host.format(ready_content[step]["id"])
 
-            return 1
+                await send_message(cfg.app.hosts.tlg.send_message,
+                                   chat_id,
+                                   message_body,
+                                   inline_keyboard=generate_keyboard_for_likes(url))
+
+                return 1
+            else:
+                text = '🤓 Вы еще ничего не добавили:)'
+                await send_message(cfg.app.hosts.tlg.send_message,
+                                   chat_id,
+                                   text,
+                                   remove_keyboard=True)
+                return 0
+
 
         # переводим клиента на экран с выбором категории поиска
         elif text == "В начало":
@@ -238,6 +248,7 @@ async def analyze_text_and_give_vacancy(m: Updater,
             reconstruction: dict = {v: str(row[v]) for v in columns}
             ready_content.append(reconstruction)
         step = 0
+        # TODO имеет ли смысл кэшировать запросы если результата нет
         await systems.local_cache.caching(chat_id,
                                           step=step,
                                           is_likes_display=False,

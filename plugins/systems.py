@@ -41,7 +41,7 @@ class LocalCacheForCallbackFunc:
             except IndexError as e:
                 return False, False
         else:
-            return False, False
+            return False, False, False
 
     async def check(self, chat_id: int) -> bool:
         val = await self.mc.get(chat_id)
