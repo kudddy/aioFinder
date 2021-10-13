@@ -82,8 +82,10 @@ class Systems:
     def __init__(self, mc: AioMemCache,
                  pg: PG,
                  local_cache: LocalCacheForCallbackFunc,
-                 tokenizer: QueryBuilder):
+                 tokenizer: QueryBuilder,
+                 model):
         self.global_cache = mc
         self.pg = pg
         self.local_cache = local_cache
         self.tokenizer = tokenizer
+        self.model = model
