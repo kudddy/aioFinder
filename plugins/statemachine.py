@@ -7,7 +7,6 @@ from plugins.systems import Systems
 from plugins.systems import LocalCacheForCallbackFunc
 from plugins.tools.tokenizer import QueryBuilder
 from plugins.mc.init import AioMemCache
-# from plugins.callback import hello_message, analyze_text_and_give_vacancy, goodbye_message
 from plugins.classifier import Model
 from plugins.callback import hello_message, get_vacancy, \
     add_vacancy_to_favorites, history_viewed_vacancy, \
@@ -41,11 +40,7 @@ class Stages:
         # если есть то смотрим на шаг
         if key:
             # если сессия активирована,то запускаем классификатор
-            print("смотрим на текст")
-            print(text)
             step = self.systems.model.predict(text=text)
-            print("смотрим на шаг")
-            print(step)
         # если нет, то в начальном стейте
         else:
             step = 0
