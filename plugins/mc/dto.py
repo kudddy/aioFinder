@@ -7,7 +7,9 @@ from pydantic import BaseModel, Field
 class CacheStructure(BaseModel):
     # шаг в сценарии
     step: int
-    # закешированные значения по вакансиями
+    # закэшированные значения по вакансиями
     cache_vacancy_result: list
     # текущая позиция пользователя в списке вакансий
     cache_iter: int
+    is_likes_display: bool
+    click_to_reveal: bool
