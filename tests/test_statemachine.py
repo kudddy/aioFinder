@@ -115,8 +115,6 @@ async def init_stages():
 
     stage = Stages(state, system)
 
-    memcached.flush_all()
-
     return stage, memcached, pg
 
 
@@ -133,6 +131,9 @@ class TestInternalSystem(asynctest.TestCase):
 
             message = Updater(**data)
 
+            # засыпаем чтобы вернуться в первоначальный стейн
+            if text == "Cледующая":
+                sleep(cfg.app.constants.timeout_for_chat + 2)
             state_number = await stage.next(message)
 
             if text == "hello":
@@ -146,13 +147,13 @@ class TestInternalSystem(asynctest.TestCase):
             elif text == "Cледующая":
                 log.debug("phrase check - yes")
                 log.debug("we remain in the same state, but go through all the recommendations, but timeout")
-                sleep(cfg.app.constants.timeout_for_chat + 2)
-                self.assertEqual(state_number, 1)
-
+                self.assertEqual(state_number, 0)
         memcached.close()
         pg.pool.close()
 
     async def test_positive_node_with_old_user(self):
+        sleep(cfg.app.constants.timeout_for_chat + 2)
+
         stage, memcached, pg = await init_stages()
 
         states = ["Привет", "python", "Следующая", "Избранное"]
@@ -163,7 +164,6 @@ class TestInternalSystem(asynctest.TestCase):
             message = Updater(**data)
 
             state_number = await stage.next(message)
-
             if text == "Привет":
                 log.debug("checking a positive thread when the user follows all the recommendations")
                 log.debug("phrase check - hello")
